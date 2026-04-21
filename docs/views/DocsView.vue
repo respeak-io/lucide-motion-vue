@@ -16,8 +16,35 @@ const props = defineProps<{ route: Route }>()
 const emit = defineEmits<{ (e: 'navigate', r: Route): void }>()
 
 const active = ref(props.route.section ?? 'quickstart')
+const sideRef = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 let manualScrollUntil = 0
+
+// Keep the sidebar scrolled so the currently-active link stays visible —
+// without ever scrolling the page itself. Adjusts only the sidebar's own
+// scrollTop/scrollLeft (handles both the desktop vertical list and the
+// mobile horizontal strip at < 900px).
+function ensureActiveLinkInView(slug: string) {
+  const side = sideRef.value
+  if (!side) return
+  const link = side.querySelector<HTMLElement>(`a[href="#/docs/${slug}"]`)
+  if (!link) return
+  const sideRect = side.getBoundingClientRect()
+  const linkRect = link.getBoundingClientRect()
+  const pad = 8
+  if (linkRect.top < sideRect.top + pad) {
+    side.scrollTop += linkRect.top - sideRect.top - pad
+  } else if (linkRect.bottom > sideRect.bottom - pad) {
+    side.scrollTop += linkRect.bottom - sideRect.bottom + pad
+  }
+  if (linkRect.left < sideRect.left + pad) {
+    side.scrollLeft += linkRect.left - sideRect.left - pad
+  } else if (linkRect.right > sideRect.right - pad) {
+    side.scrollLeft += linkRect.right - sideRect.right + pad
+  }
+}
+
+watch(active, slug => nextTick(() => ensureActiveLinkInView(slug)))
 
 function go(slug: string) {
   active.value = slug
@@ -79,7 +106,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="docs">
-    <aside class="docs-side" aria-label="Docs navigation">
+    <aside ref="sideRef" class="docs-side" aria-label="Docs navigation">
       <p class="docs-side-title">Docs</p>
       <nav>
         <a
