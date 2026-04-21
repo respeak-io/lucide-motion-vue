@@ -2,10 +2,13 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { sections } from '../sections/sections'
 import QuickstartSection from '../sections/QuickstartSection.vue'
+import PropsSection from '../sections/PropsSection.vue'
 import ButtonsSection from '../sections/ButtonsSection.vue'
 import VariantsSection from '../sections/VariantsSection.vue'
 import ColorSection from '../sections/ColorSection.vue'
 import ProgrammaticSection from '../sections/ProgrammaticSection.vue'
+import TypescriptSection from '../sections/TypescriptSection.vue'
+import AccessibilitySection from '../sections/AccessibilitySection.vue'
 import AgentsSection from '../sections/AgentsSection.vue'
 import type { Route } from '../router'
 
@@ -103,10 +106,13 @@ onBeforeUnmount(() => {
       </div>
 
       <QuickstartSection />
+      <PropsSection />
       <ButtonsSection />
       <VariantsSection />
       <ColorSection />
       <ProgrammaticSection />
+      <TypescriptSection />
+      <AccessibilitySection />
       <AgentsSection />
 
       <footer class="foot">

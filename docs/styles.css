@@ -1138,6 +1138,26 @@ header.top .brand h1 {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  /* Keep the scrollbar from cropping the focus ring on the last link. */
+  padding-right: 4px;
+  /* Subtle, theme-aware scrollbar — Firefox + WebKit. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.docs-side::-webkit-scrollbar {
+  width: 6px;
+}
+
+.docs-side::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+.docs-side::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .docs-side-title {
@@ -1443,7 +1463,10 @@ header.top .brand h1 {
     position: static;
     flex-direction: row;
     overflow-x: auto;
+    overflow-y: visible;
+    max-height: none;
     gap: 4px;
+    padding-right: 0;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
   }
@@ -1475,4 +1498,153 @@ header.top .brand h1 {
   .color-pop { right: auto; left: 0; }
   .docs-intro h1 { font-size: 1.6rem; }
   .doc-section h2 { font-size: 1.2rem; }
+}
+
+/* ============================================================
+   Prop tables — reference tables inside doc sections
+   ============================================================ */
+
+.prop-table-wrap {
+  margin: 12px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.prop-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.prop-table thead th {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--fg-muted);
+  background: var(--bg);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.prop-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.prop-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.prop-table tbody td:first-child {
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.prop-table code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  padding: 1px 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--fg);
+}
+
+.doc-list {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  color: var(--fg-muted);
+  line-height: 1.65;
+  max-width: 64ch;
+}
+
+.doc-list li {
+  margin-bottom: 8px;
+}
+
+/* ============================================================
+   Props playground — interactive controls next to a live icon
+   ============================================================ */
+
+.demo-stage-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  color: var(--icon-color, var(--fg));
+}
+
+.props-playground {
+  width: 100%;
+  max-width: 420px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.pp-row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+
+.pp-row > span:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--fg);
+}
+
+.pp-row.pp-row-check {
+  grid-template-columns: auto 1fr;
+}
+
+.pp-row select,
+.pp-row input[type="range"] {
+  width: 100%;
+  font: inherit;
+  color: var(--fg);
+}
+
+.pp-row select {
+  padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.pp-row input[type="range"] {
+  accent-color: var(--accent);
+}
+
+.pp-value {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+  min-width: 48px;
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .pp-row {
+    grid-template-columns: 1fr;
+  }
+  .pp-value {
+    text-align: left;
+  }
 }

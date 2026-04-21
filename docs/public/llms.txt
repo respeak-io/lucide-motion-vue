@@ -2,7 +2,7 @@
 
 > Lucide icons animated with Motion for Vue. 259 tree-shakable Vue 3 SFCs with
 > ergonomic triggers (hover/tap/view/programmatic) and a composable
-> `<AnimateIcon>` wrapper. Peer deps: `vue ^3.3`, `motion-v ^1`.
+> `<AnimateIcon>` wrapper. Peer deps: `vue ^3.3`, `motion-v ^2`.
 
 ## Install
 
