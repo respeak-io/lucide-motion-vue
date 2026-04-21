@@ -105,7 +105,12 @@ function extractAuxConsts(src) {
   //   const CALCULATE_DELAY = (i: number) => { ... };
   //   const CUSTOM_EASING = cubicBezier(0.25, 0.1, 0.25, 1);
   // Skipped: Variants consts (handled separately in extractVariantConsts).
-  const re = /^const\s+([A-Z_][A-Z0-9_]*)(\s*:\s*[A-Za-z_][\w<>, ]*)?\s*=\s*/gm
+  // `^\s*const` — some pqoqubbw files declare UPPER_SNAKE data arrays inside
+  // the component body (e.g. zap-off's `PATHS`). Those are indented but
+  // still top-level to our purposes — hoisting them into <script setup>
+  // keeps v-for sources resolvable without breaking anything, since the
+  // originals don't close over component params.
+  const re = /^\s*const\s+([A-Z_][A-Z0-9_]*)(\s*:\s*[A-Za-z_][\w<>, ]*)?\s*=\s*/gm
   let m
   while ((m = re.exec(src)) !== null) {
     if (/:\s*Variants\s*=/.test(m[0])) continue
@@ -211,6 +216,100 @@ function stripInlineInitial(jsx) {
     i = end + 1
   }
   return out
+}
+
+/**
+ * Rewrite React `{ARRAY.map((item, index) => (<JSX />))}` loops into a
+ * Vue `v-for` directive on the JSX element. The array source can be a
+ * module-level identifier (hoisted via extractAuxConsts) or an inline
+ * `[...]` literal. Inline literals are extracted into synthetic
+ * `VFOR_LIST_<n>` consts — otherwise double-quoted path strings inside
+ * the array would collide with the attribute's own quotes. Only
+ * single-element bodies are supported — if the map callback returns
+ * anything other than one JSX element, we leave the source alone and
+ * the stray-JSX detector will reject the icon.
+ *
+ * Returns { jsx: rewritten, hoistedArrays: [{ name, decl }] } — the
+ * caller appends hoistedArrays to auxConsts.
+ */
+function rewriteReactMapLoops(jsx) {
+  const hoistedArrays = []
+  let out = ''
+  let i = 0
+  let hoistCounter = 0
+  while (i < jsx.length) {
+    const mapIdx = jsx.indexOf('.map(', i)
+    if (mapIdx < 0) { out += jsx.slice(i); break }
+    // Walk back from `.map(` to find the array expression, then the
+    // enclosing `{` that opens the JSX expression container.
+    let j = mapIdx - 1
+    while (j >= 0 && /\s/.test(jsx[j])) j--
+    let arrayStart = -1
+    let arrayExpr = ''
+    if (jsx[j] === ']') {
+      let depth = 1, k = j - 1
+      while (k >= 0) {
+        const c = jsx[k]
+        if (c === ']') depth++
+        else if (c === '[') { depth--; if (depth === 0) break }
+        k--
+      }
+      if (depth !== 0) { out += jsx.slice(i, mapIdx + 5); i = mapIdx + 5; continue }
+      arrayStart = k
+      // Hoist the inline array to a synthetic aux const — inline literals
+      // with double-quoted strings (common for `d=` path lists) can't be
+      // embedded as-is inside a double-quoted `v-for` attribute.
+      hoistCounter++
+      const hoistName = `VFOR_LIST_${hoistCounter}`
+      hoistedArrays.push({ name: hoistName, decl: `const ${hoistName} = ${jsx.slice(k, j + 1)};` })
+      arrayExpr = hoistName
+    } else if (/[A-Za-z_$]/.test(jsx[j])) {
+      let k = j
+      while (k >= 0 && /[A-Za-z0-9_$.]/.test(jsx[k])) k--
+      arrayStart = k + 1
+      arrayExpr = jsx.slice(k + 1, j + 1)
+    } else {
+      out += jsx.slice(i, mapIdx + 5); i = mapIdx + 5; continue
+    }
+    let k = arrayStart - 1
+    while (k >= 0 && /\s/.test(jsx[k])) k--
+    if (jsx[k] !== '{') { out += jsx.slice(i, mapIdx + 5); i = mapIdx + 5; continue }
+    const blockOpen = k
+    const afterMap = mapIdx + 5 // past `.map(`
+    const argMatch = jsx.slice(afterMap).match(/^\s*\(([^)]*)\)\s*=>\s*\(/)
+    if (!argMatch) { out += jsx.slice(i, mapIdx + 5); i = mapIdx + 5; continue }
+    const argsStr = argMatch[1].trim()
+    const jsxStart = afterMap + argMatch[0].length
+    let blockEnd
+    try { ({ end: blockEnd } = extractBalanced(jsx, blockOpen)) }
+    catch { out += jsx.slice(i, mapIdx + 5); i = mapIdx + 5; continue }
+    // Body sits between the arrow's `(` and the final `))}` — back up three
+    // chars (`))}`) from the outer `}` to land at the end of the JSX.
+    const innerJsxRaw = jsx.slice(jsxStart, blockEnd - 3).trim()
+    const tagMatch = innerJsxRaw.match(/^(<[A-Za-z][\w.]*)/)
+    if (!tagMatch) { out += jsx.slice(i, mapIdx + 5); i = mapIdx + 5; continue }
+    // Drop React's `key={…}` — v-for + `:key` is the Vue equivalent; keep
+    // whichever expression was there as the Vue `:key`. Brace-balanced
+    // because template-literal keys like `key={`${a}-${b}`}` have `}` that
+    // closes the `${...}` interpolation — a greedy `[^}]+` regex snaps off
+    // at the wrong brace.
+    let keyExpr = null
+    let inner = innerJsxRaw
+    const keyIdx = inner.search(/\s+key=\{/)
+    if (keyIdx >= 0) {
+      const braceIdx = inner.indexOf('{', keyIdx)
+      const { block, end } = extractBalanced(inner, braceIdx)
+      keyExpr = block.slice(1, -1).trim()
+      inner = inner.slice(0, keyIdx) + inner.slice(end)
+    }
+    const vforRhs = `${argsStr.includes(',') ? `(${argsStr})` : argsStr} in ${arrayExpr}`
+    const insertAt = tagMatch[0].length
+    const vforAttr = `\n      v-for="${vforRhs}"` + (keyExpr ? `\n      :key="${keyExpr}"` : '')
+    const newInner = inner.slice(0, insertAt) + vforAttr + inner.slice(insertAt)
+    out += jsx.slice(i, blockOpen) + newInner
+    i = blockEnd
+  }
+  return { jsx: out, hoistedArrays }
 }
 
 /**
@@ -351,7 +450,11 @@ function extractSvgJsx(src) {
 /** VARIANT_NAME → camelCase part key. `CIRCLE_VARIANTS` → `circle`, etc. */
 function partNameFromConst(name) {
   const base = name.replace(/_VARIANTS$/, '')
-  return base.toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+  const camel = base.toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+  // Avoid `variants.variants` — a few pqoqubbw icons (grip, grip-horizontal,
+  // grip-vertical) declare a plain `const VARIANTS: Variants = {...}`. Rename
+  // that lone case to `part` so the template reads `variants.part`.
+  return camel === 'variants' ? 'part' : camel
 }
 
 /**
@@ -449,6 +552,15 @@ function jsxToVueTemplate(jsx, variantRefs) {
   // consts like `TRANSITION` pass through — we hoist the declaration into
   // the SFC's <script setup> so the binding resolves at runtime.
   out = out.replace(/(\s)([a-zA-Z][a-zA-Z0-9-]*)=\{([A-Za-z_][A-Za-z0-9_]*)\}/g, '$1:$2="$3"')
+
+  // Generic attr={<expression>} → :attr="<expression>". Catches the leftover
+  // patterns that v-for loop bodies produce: `d={path.d}`, `custom={i + 1}`,
+  // `custom={b.delay}`, etc. We accept any non-brace content, swap inner
+  // double quotes to singles so the Vue attribute quotes survive.
+  out = out.replace(/(\s)([a-zA-Z][a-zA-Z0-9-]*)=\{([^{}]+)\}/g, (_, ws, name, expr) => {
+    const safe = expr.replace(/"/g, "'")
+    return `${ws}:${name}="${safe}"`
+  })
 
   // Drop any stray JSX expression containers we missed — they'd break the
   // Vue template parser. Log so we notice.
@@ -577,12 +689,16 @@ function portOne(kebab) {
 
   const { kind, jsx } = extractSvgJsx(src)
 
-  // Preprocess JSX: strip redundant inline `initial={{...}}`, hoist inline
-  // `variants={{...}}` blocks into synthetic UPPER_SNAKE names (deduped),
-  // convert inline `transition={{...}}` to a Vue `:transition` binding.
-  let preJsx = stripInlineInitial(jsx)
+  // Preprocess JSX: unwrap React `{ARRAY.map(...)}` loops into Vue `v-for`;
+  // strip redundant inline `initial={{...}}`; hoist inline `variants={{...}}`
+  // blocks into synthetic names (deduped); convert inline object attrs like
+  // `transition={{...}}` and `custom={{...}}` to Vue bindings.
+  const mapPass = rewriteReactMapLoops(jsx)
+  let preJsx = stripInlineInitial(mapPass.jsx)
   const { jsx: withInlineVariants, parts: inlineParts } = rewriteInlineVariants(preJsx)
   preJsx = rewriteInlineObjectAttr(withInlineVariants, 'transition')
+  preJsx = rewriteInlineObjectAttr(preJsx, 'custom')
+  auxConsts.push(...mapPass.hoistedArrays)
 
   // Validate inline variant bodies the same way as named consts.
   for (const [part, body] of Object.entries(inlineParts)) {
@@ -819,6 +935,6 @@ if (results.failed.length) {
   }
   console.log('Failures by category:')
   for (const [reason, names] of [...byReason.entries()].sort((a, b) => b[1].length - a[1].length)) {
-    console.log(`  ${reason} (${names.length}):  ${names.slice(0, 8).join(', ')}${names.length > 8 ? ', …' : ''}`)
+    console.log(`  ${reason} (${names.length}):  ${names.join(', ')}`)
   }
 }
