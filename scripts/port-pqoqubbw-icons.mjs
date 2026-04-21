@@ -96,33 +96,147 @@ function extractBalanced(src, startIdx, open = '{', close = '}') {
  */
 function extractAuxConsts(src) {
   const out = []
-  // Two shapes:
-  //   1. `const NAME[: Type] = {...};`   object consts (TRANSITION, etc.)
-  //   2. `const NAME = <number|string>;` scalar consts (DURATION, EYEBROW_ROTATION)
-  // Both are module-level and UPPER_SNAKE. We hoist both into the SFC so
-  // any `attr={NAME}` or inline expression `delay: NAME` resolves.
-  const objRe = /^const\s+([A-Z_][A-Z0-9_]*)(\s*:\s*[A-Za-z_][\w<>, ]*)?\s*=\s*\{/gm
+  // Match any module-level `const NAME[: Type] = <initializer>;` where the
+  // initializer can be an object, scalar, arrow function, function call, or
+  // array. We walk forward from the `=` respecting nested braces/parens/
+  // brackets/strings/comments until we hit a top-level `;`. Shapes observed:
+  //   const DURATION = 0.3;
+  //   const TRANSITION: Transition = { duration: 0.3, ease: 'linear' };
+  //   const CALCULATE_DELAY = (i: number) => { ... };
+  //   const CUSTOM_EASING = cubicBezier(0.25, 0.1, 0.25, 1);
+  // Skipped: Variants consts (handled separately in extractVariantConsts).
+  const re = /^const\s+([A-Z_][A-Z0-9_]*)(\s*:\s*[A-Za-z_][\w<>, ]*)?\s*=\s*/gm
   let m
-  while ((m = objRe.exec(src)) !== null) {
+  while ((m = re.exec(src)) !== null) {
+    if (/:\s*Variants\s*=/.test(m[0])) continue
     const name = m[1]
     const ann = m[2] || ''
-    if (/:\s*Variants\s*=/.test(m[0])) continue
-    const braceIdx = m.index + m[0].length - 1
-    const { block, end } = extractBalanced(src, braceIdx)
-    const tail = src.slice(end).match(/^\s*;/)
-    // Keep the original TS annotation (e.g. `: Transition`) so literal-type
-    // narrowing doesn't break strict motion-v types. We import Transition
-    // alongside Variants in the SFC so the symbol resolves.
-    out.push({ name, decl: `const ${name}${ann} = ${block}${tail ? ';' : ''}` })
+    const bodyStart = m.index + m[0].length
+    let end = bodyStart
+    let depth = 0, inStr = null, inLC = false, inBC = false
+    for (; end < src.length; end++) {
+      const c = src[end], n = src[end + 1]
+      if (inLC) { if (c === '\n') inLC = false; continue }
+      if (inBC) { if (src[end - 1] === '*' && c === '/') inBC = false; continue }
+      if (inStr) {
+        if (c === '\\') { end++; continue }
+        if (c === inStr) inStr = null
+        continue
+      }
+      if (c === '/' && n === '/') { inLC = true; continue }
+      if (c === '/' && n === '*') { inBC = true; continue }
+      if (c === '"' || c === "'" || c === '`') { inStr = c; continue }
+      if (c === '{' || c === '(' || c === '[') depth++
+      else if (c === '}' || c === ')' || c === ']') depth--
+      else if (depth === 0 && c === ';') break
+    }
+    const body = src.slice(bodyStart, end).trimEnd()
+    // Preserve the TS annotation (e.g. `: Transition`) so literal-type
+    // narrowing doesn't trip strict motion-v types.
+    out.push({ name, decl: `const ${name}${ann} = ${body};` })
   }
-  // Scalar consts: `const FOO = 500;` or `const FOO = 'bar';`. Stop at `;`
-  // or newline. We avoid matching values that span braces/parens.
-  const scalarRe = /^const\s+([A-Z_][A-Z0-9_]*)\s*=\s*([-\d.]+|"[^"]*"|'[^']*')\s*;?/gm
-  while ((m = scalarRe.exec(src)) !== null) {
-    const [, name, value] = m
-    // Skip if we already captured this name as an object const above.
-    if (out.some(c => c.name === name)) continue
-    out.push({ name, decl: `const ${name} = ${value};` })
+  return out
+}
+
+/**
+ * Rewrite inline `variants={{...}}` attributes on motion elements into
+ * a sentinel `variants={__INLINE__<partName>}` token, deduplicating
+ * identical bodies so three motion.paths sharing the same variants map to
+ * one `path` part. The first unique body becomes `path`, subsequent uniques
+ * become `path2`, `path3`, etc.
+ *
+ * We use a dedicated sentinel (not a synthetic UPPER_SNAKE name) so names
+ * with digits or camelCase survive the trip into jsxToVueTemplate without
+ * being re-lowercased by partNameFromConst.
+ *
+ * Returns { jsx: rewritten, parts: { partName → body } } where `body` is
+ * the text between the outer object braces — matching extractVariantConsts'
+ * shape so downstream code can treat both uniformly.
+ */
+function rewriteInlineVariants(jsx) {
+  const parts = {}
+  const bodyToPart = new Map()
+  let out = ''
+  let i = 0
+  let counter = 0
+  while (i < jsx.length) {
+    const idx = jsx.indexOf('variants={{', i)
+    if (idx < 0) { out += jsx.slice(i); break }
+    const innerOpen = idx + 'variants={'.length // points at inner '{'
+    const { block, end } = extractBalanced(jsx, innerOpen)
+    if (jsx[end] !== '}') throw new Error('expected } after inline variants body')
+    const body = block.slice(1, -1)
+    const norm = body.replace(/\s+/g, ' ').trim()
+    let partName = bodyToPart.get(norm)
+    if (!partName) {
+      counter++
+      partName = counter === 1 ? 'path' : `path${counter}`
+      bodyToPart.set(norm, partName)
+      parts[partName] = body
+    }
+    out += jsx.slice(i, idx) + `variants={__INLINE__${partName}}`
+    i = end + 1
+  }
+  return { jsx: out, parts }
+}
+
+/**
+ * Strip inline `initial={{...}}` attributes. Pqoqubbw declares these as a
+ * belt-and-suspenders companion to `variants.normal` — motion-v resolves
+ * `variants.initial` (after our rename) at mount, so the literal is
+ * redundant and simplifying it avoids a second JSX expression the codemod
+ * would have to transform.
+ */
+function stripInlineInitial(jsx) {
+  let out = ''
+  let i = 0
+  while (i < jsx.length) {
+    const idx = jsx.indexOf('initial={{', i)
+    if (idx < 0) { out += jsx.slice(i); break }
+    // Only strip when this looks like an attribute (preceded by whitespace).
+    if (idx > 0 && !/\s/.test(jsx[idx - 1])) {
+      out += jsx.slice(i, idx + 1)
+      i = idx + 1
+      continue
+    }
+    const innerOpen = idx + 'initial={'.length
+    const { end } = extractBalanced(jsx, innerOpen)
+    if (jsx[end] !== '}') throw new Error('expected } after inline initial body')
+    // Trim the leading whitespace/indent before `initial` so the element
+    // doesn't end up with a blank line where the attribute used to be.
+    let trim = idx
+    while (trim > 0 && /[\t ]/.test(jsx[trim - 1])) trim--
+    if (trim > 0 && jsx[trim - 1] === '\n') trim--
+    out += jsx.slice(i, trim)
+    i = end + 1
+  }
+  return out
+}
+
+/**
+ * Rewrite an inline object attribute `attrName={{...}}` into a Vue binding
+ * `:attrName="{...}"`. Used for `transition={{...}}` which pqoqubbw sprinkles
+ * on motion elements alongside a named-const variants binding — motion-v
+ * Vue supports `:transition="{...}"` as an element-level default.
+ */
+function rewriteInlineObjectAttr(jsx, attrName) {
+  let out = ''
+  let i = 0
+  const needle = `${attrName}={{`
+  while (i < jsx.length) {
+    const idx = jsx.indexOf(needle, i)
+    if (idx < 0) { out += jsx.slice(i); break }
+    if (idx > 0 && !/\s/.test(jsx[idx - 1])) {
+      out += jsx.slice(i, idx + 1)
+      i = idx + 1
+      continue
+    }
+    const innerOpen = idx + attrName.length + 2 // skip `attrName={` → inner '{'
+    const { block, end } = extractBalanced(jsx, innerOpen)
+    if (jsx[end] !== '}') throw new Error(`expected } after inline ${attrName} body`)
+    const safe = block.replace(/"/g, "'")
+    out += jsx.slice(i, idx) + `:${attrName}="${safe}"`
+    i = end + 1
   }
   return out
 }
@@ -274,6 +388,12 @@ function jsxToVueTemplate(jsx, variantRefs) {
     return `:style="${safeBody}"`
   })
 
+  // variants={__INLINE__<partName>} → :variants="variants.<partName>".
+  // Sentinel preserves the exact camelCase name from rewriteInlineVariants.
+  out = out.replace(/variants=\{__INLINE__([A-Za-z0-9]+)\}/g, (_, part) => {
+    variantRefs.add(part)
+    return `:variants="variants.${part}"`
+  })
   // variants={FOO_VARIANTS} → :variants="variants.foo" + record the ref.
   out = out.replace(/variants=\{([A-Z_][A-Z0-9_]*)\}/g, (_, name) => {
     const part = partNameFromConst(name)
@@ -345,9 +465,18 @@ function emitSfc({ pascal, svgTemplate, animationsSrc, auxConsts }) {
   // Include Transition only when an aux const uses it; keeps unused-import
   // warnings off the vast majority of icons that don't need it.
   const needsTransition = auxConsts.some(c => /:\s*Transition\b/.test(c.decl))
-  const motionImports = needsTransition
-    ? `import { motion, type Transition, type Variants } from 'motion-v'`
-    : `import { motion, type Variants } from 'motion-v'`
+  // Detect motion-v runtime utilities referenced from aux decls (cubicBezier,
+  // spring, etc). Pqoqubbw imports these from 'motion/react'; motion-v
+  // re-exports them under the same names.
+  const MOTION_UTILS = ['cubicBezier', 'spring', 'wrap', 'clamp', 'mix']
+  const neededUtils = MOTION_UTILS.filter(u =>
+    auxConsts.some(c => new RegExp(`\\b${u}\\s*\\(`).test(c.decl)),
+  )
+  const imports = ['motion']
+  for (const u of neededUtils) imports.push(u)
+  if (needsTransition) imports.push('type Transition')
+  imports.push('type Variants')
+  const motionImports = `import { ${imports.join(', ')} } from 'motion-v'`
 
   return `<script setup lang="ts">
 // Auto-generated from pqoqubbw/icons by scripts/port-pqoqubbw-icons.mjs.
@@ -424,11 +553,6 @@ function portOne(kebab) {
     if (starts.length > 1) throw new Error('sequenced: multiple controls.start')
   }
 
-  // Bail if any motion element uses an inline variants={{...}} object rather
-  // than a named const. Parsing those is mechanical but gets hairy with
-  // dedup/hoist; waves is the main offender. Hand-port later.
-  if (/variants=\{\{/.test(src)) throw new Error('inline variants={{...}}')
-
   // Bail on multi-controls icons: pqoqubbw's brand icons (instagram, twitch,
   // dribbble, etc.) create separate `useAnimation()` controllers per element
   // so each part can play on a different schedule. Our context exposes a
@@ -438,11 +562,10 @@ function portOne(kebab) {
   if (useAnimationCalls > 1) throw new Error('multi-controls (multiple useAnimation)')
 
   const consts = extractVariantConsts(src)
-  if (Object.keys(consts).length === 0) throw new Error('no Variants consts found')
   const auxConsts = extractAuxConsts(src)
 
-  // Each const must have keys strictly in {normal, animate}. Bail otherwise
-  // (e.g. ban's LINE_VARIANTS has {normal, slash}).
+  // Each named const must have keys strictly in {normal, animate}. Bail
+  // otherwise (e.g. ban's LINE_VARIANTS has {normal, slash}).
   for (const [name, info] of Object.entries(consts)) {
     const keys = variantStateKeys(info.body)
     const allowed = new Set(['normal', 'animate'])
@@ -454,16 +577,54 @@ function portOne(kebab) {
 
   const { kind, jsx } = extractSvgJsx(src)
 
-  // Rewrite variants blocks: normal→initial.
+  // Preprocess JSX: strip redundant inline `initial={{...}}`, hoist inline
+  // `variants={{...}}` blocks into synthetic UPPER_SNAKE names (deduped),
+  // convert inline `transition={{...}}` to a Vue `:transition` binding.
+  let preJsx = stripInlineInitial(jsx)
+  const { jsx: withInlineVariants, parts: inlineParts } = rewriteInlineVariants(preJsx)
+  preJsx = rewriteInlineObjectAttr(withInlineVariants, 'transition')
+
+  // Validate inline variant bodies the same way as named consts.
+  for (const [part, body] of Object.entries(inlineParts)) {
+    const keys = variantStateKeys(body)
+    const allowed = new Set(['normal', 'animate'])
+    for (const k of keys) {
+      if (!allowed.has(k)) throw new Error(`non-standard inline variant state: ${part}.${k}`)
+    }
+    if (!keys.includes('animate')) throw new Error(`inline ${part} missing 'animate' state`)
+  }
+
+  if (Object.keys(consts).length === 0 && Object.keys(inlineParts).length === 0) {
+    throw new Error('no Variants consts found')
+  }
+
+  // Rewrite variants blocks: normal→initial. Merge named + inline into one
+  // parts map. Inline names are synthetic (`path`, `path2`, …) and can
+  // collide with a named const's camelCase name (e.g. PATH_VARIANTS → path).
+  // When that happens, rename the inline part + its JSX references so both
+  // coexist — named keeps its derived name, inline bumps to a free slot.
   const parts = {}
   for (const [name, info] of Object.entries(consts)) {
     const part = partNameFromConst(name)
     parts[part] = renameNormalToInitial(info.body)
   }
+  for (const [part, body] of Object.entries(inlineParts)) {
+    let final = part
+    let n = 2
+    while (parts[final]) final = `${part}Inline${n++}`
+    parts[final] = renameNormalToInitial(body)
+    if (final !== part) {
+      // preJsx holds `variants={__INLINE__<part>}` sentinels — retarget
+      // them to the new slot so the downstream substitution picks it up.
+      const from = `__INLINE__${part}}`
+      const to = `__INLINE__${final}}`
+      preJsx = preJsx.split(from).join(to)
+    }
+  }
 
   // Transform the JSX subtree.
   const variantRefs = new Set()
-  let tpl = jsxToVueTemplate(jsx, variantRefs)
+  let tpl = jsxToVueTemplate(preJsx, variantRefs)
   tpl = addVElse(tpl, kind)
 
   // If jsxToVueTemplate left any stray JSX expression containers we missed,
