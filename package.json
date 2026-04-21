@@ -28,7 +28,7 @@
   "bugs": {
     "url": "https://github.com/respeak-io/lucide-motion-vue/issues"
   },
-  "homepage": "https://github.com/respeak-io/lucide-motion-vue#readme",
+  "homepage": "https://respeak-io.github.io/lucide-motion-vue/",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

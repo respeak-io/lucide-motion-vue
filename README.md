@@ -2,6 +2,10 @@
 
 Lucide icons animated with [Motion for Vue](https://motion.dev/docs/vue) — ergonomic `animateOnHover`, `animateOnTap`, `animateOnView`, and a composable `<AnimateIcon>` wrapper.
 
+**▶︎ [Browse the live icon gallery](https://respeak-io.github.io/lucide-motion-vue/)** — searchable grid, hover to see each animation, click for variants and copy-paste snippets.
+
+[![Icon gallery preview](./docs/preview.png)](https://respeak-io.github.io/lucide-motion-vue/)
+
 Variants and SVG geometry adapted from [animate-ui](https://github.com/imskyleen/animate-ui) (Skyleen, MIT + Commons Clause). This is a Vue port of the icon set, built on `motion-v` instead of React + `motion/react`.
 
 - **259 icons**, tree-shakable, one chunk per icon
@@ -214,13 +218,17 @@ Animation is purely visual — it never changes the DOM structure or any `aria-*
 
 ## Docs site
 
-The `docs/` site ships two views:
+**Live:** https://respeak-io.github.io/lucide-motion-vue/
+
+Two views:
 
 - **Browse icons** (`/`) — searchable grid, variant picker, copy-paste snippets.
 - **Read the docs** (`/#/docs`) — usage patterns with live demos: icons in buttons, variants, color, programmatic triggers, and a section for AI agents pointing at `llms.txt`.
 
+To run locally:
+
 ```bash
-pnpm docs:dev       # serve it locally on http://localhost:5174
+pnpm docs:dev       # serve it on http://localhost:5174
 pnpm docs:build     # emit static site to docs-dist/
 ```
 
