@@ -62,6 +62,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
 
   <motion.svg
     v-else
+    overflow="visible"
           :animate="current"
       @animationComplete="notifyComplete"
           fill="none"

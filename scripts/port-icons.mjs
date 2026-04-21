@@ -221,8 +221,14 @@ function jsxToVueTemplate(jsx) {
 function emitVueSfc({ pascal, needsPathClassName }, prelude, animationsBlock, jsx) {
   const preludeSection = prelude ? `${prelude}\n\n` : ''
 
-  // Add `v-else` marker on the top-level motion.svg tag of the JSX.
-  const jsxWithVElse = jsx.replace(/^<motion\.svg\b/, '<motion.svg\n    v-else')
+  // Add `v-else` marker on the top-level motion.svg tag of the JSX, and
+  // inject `overflow="visible"` so keyframe values that temporarily push
+  // children outside the 24×24 viewBox don't get clipped by the
+  // user-agent's default `svg { overflow: hidden }` rule.
+  const jsxWithVElse = jsx.replace(
+    /^<motion\.svg\b/,
+    '<motion.svg\n    v-else\n    overflow="visible"',
+  )
 
   // Some upstream icons (e.g. fingerprint) apply `pathClassName` on the svg —
   // a CSS rule that overrides motion's fully-drawn `stroke-dasharray: 1px 1px`

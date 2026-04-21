@@ -475,8 +475,12 @@ function partNameFromConst(name) {
 function jsxToVueTemplate(jsx, variantRefs) {
   let out = jsx
 
-  // className={cn(...)}  → strip
+  // className={cn(...)}  → strip (expression form)
   out = out.replace(/\s+className=\{[^}]*\}/g, '')
+  // className="..."  → strip (string form, e.g. `className="overflow-visible"`).
+  // We inject our own overflow handling on the svg root, so upstream hints
+  // are redundant and would leak into the Vue output verbatim.
+  out = out.replace(/\s+className="[^"]*"/g, '')
   // {...props} → strip
   out = out.replace(/\s+\{\.\.\.props\}/g, '')
 
@@ -640,13 +644,17 @@ const selfWrap = computed(() => hasOwnTriggers(props))
 /**
  * Convert `<svg ...>` → `<motion.svg v-else ...>` or
  * `<motion.svg ...>` → `<motion.svg v-else ...>` (adding the directive).
+ * Also inject `overflow="visible"` so animations that draw outside the
+ * 24×24 viewBox (ambulance speed lines, party-popper confetti, etc.) don't
+ * get clipped by the user-agent's default `svg { overflow: hidden }` rule.
  */
 function addVElse(svgJsx, kind) {
+  const marker = '<motion.svg\n    v-else\n    overflow="visible"'
   if (kind === 'motion-svg') {
-    return svgJsx.replace(/^<motion\.svg\b/, '<motion.svg\n    v-else')
+    return svgJsx.replace(/^<motion\.svg\b/, marker)
   }
   return svgJsx
-    .replace(/^<svg\b/, '<motion.svg\n    v-else')
+    .replace(/^<svg\b/, marker)
     .replace(/<\/svg>$/, '</motion.svg>')
 }
 
