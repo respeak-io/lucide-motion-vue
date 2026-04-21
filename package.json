@@ -1,7 +1,7 @@
 {
   "name": "@respeak/lucide-motion-vue",
   "description": "Lucide icons animated with Motion for Vue — ergonomic animateOnHover, animateOnTap, animateOnView, and a composable <AnimateIcon> wrapper.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
   "sideEffects": false,
