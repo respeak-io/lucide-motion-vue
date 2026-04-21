@@ -1,0 +1,219 @@
+# @respeak/lucide-motion-vue
+
+> Lucide icons animated with Motion for Vue. 259 tree-shakable Vue 3 SFCs with
+> ergonomic triggers (hover/tap/view/programmatic) and a composable
+> `<AnimateIcon>` wrapper. Peer deps: `vue ^3.3`, `motion-v ^1`.
+
+## Install
+
+```bash
+pnpm add @respeak/lucide-motion-vue motion-v
+# or: npm install / yarn add / bun add
+```
+
+## Import
+
+```ts
+// Barrel (recommended — tree-shakes under ESM)
+import { Heart, BetweenVerticalStart, AnimateIcon } from '@respeak/lucide-motion-vue'
+
+// Per-icon subpath (guaranteed separate chunks)
+import Heart from '@respeak/lucide-motion-vue/icons/heart'
+```
+
+Alias form — use `<Name>Animated` when you also import the static
+`lucide-vue-next`:
+
+```ts
+import { Heart as StaticHeart } from 'lucide-vue-next'
+import { HeartAnimated } from '@respeak/lucide-motion-vue'
+```
+
+## Triggers (pick one)
+
+Every icon accepts these props. Pick exactly **one** of the triggers, or use
+a combination when it makes sense (e.g. hover + tap for interactive icons).
+
+| prop                  | type                | effect                                      |
+|-----------------------|---------------------|---------------------------------------------|
+| `animateOnHover`      | `boolean \| string` | Play while hovered.                         |
+| `animateOnTap`        | `boolean \| string` | Play while pointer is down.                 |
+| `animateOnView`       | `boolean \| string` | Play when the icon scrolls into view.       |
+| `animate`             | `boolean \| string` | Programmatic. Bind to your state.           |
+
+String form selects a named variant instead of the default.
+
+### Props (also on every icon)
+
+| prop                  | type      | default     | description                          |
+|-----------------------|-----------|-------------|--------------------------------------|
+| `size`                | `number`  | `28`        | Width/height in px.                  |
+| `strokeWidth`         | `number`  | `2`         | SVG stroke width.                    |
+| `animation`           | `string`  | `'default'` | Which named variant group to use.    |
+| `persistOnAnimateEnd` | `boolean` | `false`     | Keep final state after playback.     |
+| `initialOnAnimateEnd` | `boolean` | `false`     | Force snap back to initial state.    |
+
+## Patterns
+
+### Basic
+
+```vue
+<script setup lang="ts">
+import { Heart } from '@respeak/lucide-motion-vue'
+</script>
+
+<template>
+  <Heart animateOnHover :size="32" />
+</template>
+```
+
+### Whole button as trigger
+
+Wrap with `<AnimateIcon as="template">` and spread the exposed `on` object.
+The wrapper renders no DOM — the button itself is the hit target.
+
+```vue
+<AnimateIcon animateOnHover as="template" v-slot="{ on }">
+  <button v-on="on" class="btn">
+    <Heart :size="18" />
+    Favorite
+  </button>
+</AnimateIcon>
+```
+
+With Vuetify:
+
+```vue
+<AnimateIcon animateOnHover as="template" v-slot="{ on }">
+  <v-btn color="primary" v-on="on">
+    <Heart :size="18" class="mr-2" />
+    Favorite
+  </v-btn>
+</AnimateIcon>
+```
+
+### One trigger, many icons
+
+Default `span` mode wraps children and catches trigger events for all of them:
+
+```vue
+<AnimateIcon animateOnHover>
+  <Heart :size="20" />
+  <Trash2 :size="20" />
+</AnimateIcon>
+```
+
+### Named variants
+
+Some icons ship multiple named animations. Use the `animation` prop:
+
+```vue
+<Heart animateOnHover animation="fill" :size="32" />
+<Link2 animateOnHover animation="unlink" :size="32" />
+```
+
+List variants at runtime:
+
+```ts
+import { iconsMeta } from '@respeak/lucide-motion-vue'
+
+iconsMeta.find(m => m.pascal === 'Heart')?.animations
+// → ['default', 'fill']
+```
+
+### Color
+
+Icons use `currentColor`. Drive color via any CSS `color` value on the icon
+or any ancestor. **Do not add a color prop.**
+
+```vue
+<Heart animateOnHover class="text-rose-500" />
+<Heart animateOnHover style="color: #4f46e5" />
+<div style="color: var(--brand)"><Heart animateOnHover /></div>
+```
+
+Fill-based variants also tween to `currentColor`, so filled state matches the
+surrounding color automatically.
+
+### Programmatic — replay on command
+
+Re-key to remount and replay the mount animation:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { Bell } from '@respeak/lucide-motion-vue'
+
+const key = ref(0)
+function ring() { key.value++ }
+</script>
+
+<template>
+  <Bell :key="key" animate :size="28" />
+  <button @click="ring">Notify</button>
+</template>
+```
+
+### Programmatic — driven by state
+
+Icons that bake `repeat: Infinity` into their variants
+(`LoaderCircle`, `Loader`, `LoaderPinwheel`) loop while mounted with
+`animate`:
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { LoaderCircle, Check } from '@respeak/lucide-motion-vue'
+
+type Status = 'idle' | 'loading' | 'done'
+const status = ref<Status>('idle')
+</script>
+
+<template>
+  <button @click="submit" :disabled="status === 'loading'">
+    <LoaderCircle v-if="status === 'loading'" animate :size="16" />
+    <Check        v-else-if="status === 'done'"  animate :size="16" />
+    Submit
+  </button>
+</template>
+```
+
+### Programmatic — bind a variant
+
+`animate` accepts a variant name. Bind it to state for declarative swaps:
+
+```vue
+<Heart :animate="isFavorited ? 'fill' : false" />
+```
+
+## Accessibility
+
+- **Decorative** (next to a visible label): `aria-hidden="true"`.
+- **Meaningful** (icon-only button): set `aria-label` on the button.
+- Animation never changes the DOM or any `aria-*` state, so screen readers
+  aren't affected. For `prefers-reduced-motion`, render static icons from
+  `lucide-vue-next` instead when the user prefers reduced motion.
+
+## TypeScript
+
+```ts
+import type { IconTriggerProps, IconMeta } from '@respeak/lucide-motion-vue'
+```
+
+- Every icon has typed props.
+- `IconTriggerProps` is the shared prop set (size/strokeWidth/triggers).
+- `IconMeta` is `{ kebab: string; pascal: string; animations: string[] }`.
+- No `any` in the public API.
+
+## Do / don't
+
+- **Do** wrap buttons/cards/links in `<AnimateIcon as="template">` when the
+  whole element should be the trigger. Users expect a bigger hit area than
+  the 16–24px SVG.
+- **Do** use `currentColor` via `color`/Tailwind text utilities.
+- **Don't** add custom color props — there aren't any.
+- **Don't** render every icon on a page with `animateOnView` (distracting).
+  Prefer `animateOnHover` for affordances, reserve `animateOnView` for hero
+  moments.
+- **Don't** hand-roll `setInterval` to loop icons; use the variants that bake
+  `repeat: Infinity` (or re-key to replay one-shots).
