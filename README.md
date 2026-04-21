@@ -183,9 +183,15 @@ Every icon's kebab name, Pascal name, and full list of animation variants is exp
 import { iconsMeta, type IconMeta } from '@respeak/lucide-motion-vue'
 
 iconsMeta[0]
-// → { kebab: 'accessibility', pascal: 'Accessibility', animations: ['default'] }
+// → {
+//     kebab: 'accessibility',
+//     pascal: 'Accessibility',
+//     animations: [{ name: 'default', source: 'animate-ui' }],
+//   }
 
-iconsMeta.find(m => m.pascal === 'Heart')?.animations
+// Each variant carries its upstream `source` ('animate-ui' | 'lucide-animated'
+// | 'hand-written') for attribution — see ATTRIBUTIONS.md.
+iconsMeta.find(m => m.pascal === 'Heart')?.animations.map(a => a.name)
 // → ['default', 'fill']
 ```
 
@@ -265,8 +271,16 @@ When upstream adds a new icon, re-run the script — it auto-picks up new direct
 
 Drop a `.vue` file in `src/icons/` matching the pattern of the existing generated files (script + scoped slot + self-wrap branch + `motion.svg` with `:variants=` bindings). `pnpm build` picks it up via the icon-entry glob in `vite.config.ts`, and re-running the codemod regenerates the barrel to include it.
 
-## License
+## License & attributions
 
 MIT for the framework code in `src/core/`.
 
-Icon variants + SVG geometry are adapted from animate-ui (MIT + Commons Clause), which in turn uses SVG paths from [Lucide](https://lucide.dev) (ISC). See `LICENSE` for the full text.
+Icon variants come from several upstream projects — each variant in `iconsMeta` carries a `source` tag for attribution:
+
+- **`animate-ui`** — [github.com/imskyleen/animate-ui](https://github.com/imskyleen/animate-ui) (MIT + Commons Clause). The bulk of the library.
+- **`lucide-animated`** — [lucide-animated.com](https://lucide-animated.com), ported from [pqoqubbw/icons](https://github.com/pqoqubbw/icons) (MIT).
+- **`hand-written`** — designed in-repo (e.g. `rocket`).
+
+Underlying SVG paths come from [Lucide](https://lucide.dev) (ISC).
+
+See [`ATTRIBUTIONS.md`](./ATTRIBUTIONS.md) for the readable version and [`LICENSE`](./LICENSE) for the full legal text.

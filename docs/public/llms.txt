@@ -118,6 +118,13 @@ List variants at runtime:
 import { iconsMeta } from '@respeak/lucide-motion-vue'
 
 iconsMeta.find(m => m.pascal === 'Heart')?.animations
+// → [
+//     { name: 'default', source: 'animate-ui' },
+//     { name: 'fill',    source: 'animate-ui' },
+//   ]
+
+// Names only:
+iconsMeta.find(m => m.pascal === 'Heart')?.animations.map(a => a.name)
 // → ['default', 'fill']
 ```
 
@@ -202,7 +209,9 @@ import type { IconTriggerProps, IconMeta } from '@respeak/lucide-motion-vue'
 
 - Every icon has typed props.
 - `IconTriggerProps` is the shared prop set (size/strokeWidth/triggers).
-- `IconMeta` is `{ kebab: string; pascal: string; animations: string[] }`.
+- `IconMeta` is `{ kebab, pascal, animations: Array<{ name, source }> }`
+  where `source` is `'animate-ui' | 'lucide-animated' | 'hand-written'`.
+  See `ATTRIBUTIONS.md` for what each source means and its license.
 - No `any` in the public API.
 
 ## Do / don't

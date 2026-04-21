@@ -26,11 +26,16 @@ const basic = `<Heart animateOnHover animation="fill" :size="32" />`
 
 const discover = `import { iconsMeta } from '@respeak/lucide-motion-vue'
 
-// Every icon's variant list is exported as plain data
+// Every icon's variant list is exported as plain data. Each entry
+// carries \`name\` (what you pass to the \`animation\` prop) and
+// \`source\` (the upstream project it came from).
 iconsMeta.find(m => m.pascal === 'Heart')?.animations
-// → ['default', 'fill']
+// → [
+//     { name: 'default', source: 'animate-ui' },
+//     { name: 'fill',    source: 'animate-ui' },
+//   ]
 
-iconsMeta.find(m => m.pascal === 'Link2')?.animations
+iconsMeta.find(m => m.pascal === 'Link2')?.animations.map(a => a.name)
 // → ['default', 'apart', 'unlink', 'link']`
 
 const heartMeta = iconsMeta.find(m => m.pascal === 'Heart')
@@ -55,12 +60,12 @@ const link2Meta = iconsMeta.find(m => m.pascal === 'Link2')
           <div class="variant-pills">
             <button
               v-for="v in heartMeta?.animations"
-              :key="`heart-${v}`"
+              :key="`heart-${v.name}`"
               class="pill"
-              :class="{ active: v === heartVariant }"
-              @click="pickHeart(v as any)"
+              :class="{ active: v.name === heartVariant }"
+              @click="pickHeart(v.name as any)"
             >
-              {{ v }}
+              {{ v.name }}
             </button>
           </div>
           <Heart
@@ -77,12 +82,12 @@ const link2Meta = iconsMeta.find(m => m.pascal === 'Link2')
           <div class="variant-pills">
             <button
               v-for="v in link2Meta?.animations"
-              :key="`link-${v}`"
+              :key="`link-${v.name}`"
               class="pill"
-              :class="{ active: v === link2Variant }"
-              @click="pickLink2(v as any)"
+              :class="{ active: v.name === link2Variant }"
+              @click="pickLink2(v.name as any)"
             >
-              {{ v }}
+              {{ v.name }}
             </button>
           </div>
           <Link2
