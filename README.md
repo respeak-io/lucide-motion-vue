@@ -1,14 +1,19 @@
 # @respeak/lucide-motion-vue
 
-Lucide icons animated with [Motion for Vue](https://motion.dev/docs/vue) — ergonomic `animateOnHover`, `animateOnTap`, `animateOnView`, and a composable `<AnimateIcon>` wrapper.
+[![npm](https://img.shields.io/npm/v/@respeak/lucide-motion-vue.svg?color=cb3837&label=npm)](https://www.npmjs.com/package/@respeak/lucide-motion-vue)
+[![downloads](https://img.shields.io/npm/dm/@respeak/lucide-motion-vue.svg?color=informational)](https://www.npmjs.com/package/@respeak/lucide-motion-vue)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@respeak/lucide-motion-vue?label=min%2Bgzip)](https://bundlephobia.com/package/@respeak/lucide-motion-vue)
+[![Vue 3](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org)
+[![types](https://img.shields.io/npm/types/@respeak/lucide-motion-vue.svg)](https://www.npmjs.com/package/@respeak/lucide-motion-vue)
 
-**▶︎ [Browse the live icon gallery](https://respeak-io.github.io/lucide-motion-vue/)** — searchable grid, hover to see each animation, click for variants and copy-paste snippets.
+**259 Lucide icons animated with [Motion for Vue](https://motion.dev/docs/vue)** — drop-in, tree-shakeable, TypeScript-first. A Vue 3 port of the animated icon set from [animate-ui](https://github.com/imskyleen/animate-ui) (React), rebuilt on `motion-v`.
 
-[![Icon gallery preview](./docs/preview.png)](https://respeak-io.github.io/lucide-motion-vue/)
+[![Animated icon preview](./docs/hero.gif)](https://respeak-io.github.io/lucide-motion-vue/)
 
-Variants and SVG geometry adapted from [animate-ui](https://github.com/imskyleen/animate-ui) (Skyleen, MIT + Commons Clause). This is a Vue port of the icon set, built on `motion-v` instead of React + `motion/react`.
+**▶︎ [Browse the live icon gallery](https://respeak-io.github.io/lucide-motion-vue/)** — hover any icon to preview; click for variants and copy-paste snippets.
 
 - **259 icons**, tree-shakable, one chunk per icon
+- Ergonomic triggers: `animateOnHover`, `animateOnTap`, `animateOnView`, or a composable `<AnimateIcon>` wrapper
 - Composition API, `<script setup>`, full TypeScript types
 - Native Motion loops — no hand-rolled rAF, no timers
 - Color via `currentColor`, plays nicely with Tailwind / Vuetify / any design system
@@ -36,7 +41,7 @@ Variants and SVG geometry adapted from [animate-ui](https://github.com/imskyleen
 pnpm add @respeak/lucide-motion-vue motion-v
 ```
 
-Peer deps: `vue ^3.3`, `motion-v ^1`.
+Peer deps: `vue ^3.3`, `motion-v ^2`.
 
 ## Usage
 
