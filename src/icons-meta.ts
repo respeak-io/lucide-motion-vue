@@ -434,7 +434,7 @@ export const iconsMeta: IconMeta[] = [
   { kebab: 'refresh-ccw-dot', pascal: 'RefreshCcwDot', animations: [{ name: 'default', source: 'animate-ui' }, { name: 'rotate', source: 'animate-ui' }] },
   { kebab: 'refresh-cw', pascal: 'RefreshCw', animations: [{ name: 'default', source: 'animate-ui' }, { name: 'rotate', source: 'animate-ui' }] },
   { kebab: 'refresh-cw-off', pascal: 'RefreshCwOff', animations: [{ name: 'default', source: 'animate-ui' }, { name: 'off', source: 'animate-ui' }] },
-  { kebab: 'rocket', pascal: 'Rocket', animations: [{ name: 'default', source: 'hand-written' }, { name: 'launch', source: 'hand-written' }] },
+  { kebab: 'rocket', pascal: 'Rocket', animations: [{ name: 'default', source: 'hand-written' }, { name: 'launch', source: 'hand-written' }, { name: 'lucide-animated', source: 'lucide-animated' }] },
   { kebab: 'rocking-chair', pascal: 'RockingChair', animations: [{ name: 'default', source: 'lucide-animated' }] },
   { kebab: 'roller-coaster', pascal: 'RollerCoaster', animations: [{ name: 'default', source: 'lucide-animated' }] },
   { kebab: 'rotate-ccw', pascal: 'RotateCcw', animations: [{ name: 'default', source: 'animate-ui' }, { name: 'rotate', source: 'animate-ui' }] },

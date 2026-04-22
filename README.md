@@ -6,13 +6,13 @@
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org)
 [![types](https://img.shields.io/npm/types/@respeak/lucide-motion-vue.svg)](https://www.npmjs.com/package/@respeak/lucide-motion-vue)
 
-**259 Lucide icons animated with [Motion for Vue](https://motion.dev/docs/vue)** — drop-in, tree-shakeable, TypeScript-first. A Vue 3 port of the animated icon set from [animate-ui](https://github.com/imskyleen/animate-ui) (React), rebuilt on `motion-v`.
+**516 animated Lucide icons for Vue 3** — drop-in, tree-shakeable, TypeScript-first. A library *and* a docs site: live demos, a searchable gallery, and a playground (coming next) to tweak any icon and copy the snippet.
 
 [![Animated icon preview](./docs/hero.gif)](https://respeak-io.github.io/lucide-motion-vue/)
 
-**▶︎ [Browse the live icon gallery](https://respeak-io.github.io/lucide-motion-vue/)** — hover any icon to preview; click for variants and copy-paste snippets.
+**▶︎ [Live gallery + docs](https://respeak-io.github.io/lucide-motion-vue/)** — hover any icon to preview; click for variants, props, and copy-paste snippets. Built on [Motion for Vue](https://motion.dev/docs/vue), with icon variants ported from [animate-ui](https://github.com/imskyleen/animate-ui) and [lucide-animated / pqoqubbw/icons](https://github.com/pqoqubbw/icons).
 
-- **259 icons**, tree-shakable, one chunk per icon
+- **516 icons**, tree-shakable, one chunk per icon
 - Ergonomic triggers: `animateOnHover`, `animateOnTap`, `animateOnView`, or a composable `<AnimateIcon>` wrapper
 - Composition API, `<script setup>`, full TypeScript types
 - Native Motion loops — no hand-rolled rAF, no timers
@@ -251,13 +251,14 @@ A concise machine-readable API reference is served at `/llms.txt` (and checked i
 
 ## Contributing / regenerating icons
 
-The icons in `src/icons/` are generated from the upstream animate-ui registry via `scripts/port-icons.mjs`:
+The icons in `src/icons/` are generated from two upstream registries:
 
 ```bash
-node scripts/port-icons.mjs --force
+node scripts/port-icons.mjs --force            # animate-ui variants
+node scripts/port-pqoqubbw-icons.mjs --force   # lucide-animated / pqoqubbw variants
 ```
 
-This clones the upstream repo into `/tmp/animate-ui-upstream` on first run (shallow), then for each icon:
+Each script clones its upstream into `/tmp/…-upstream` on first run (shallow), then for every icon:
 
 1. Extracts the module prelude (module-level constants, helper Variants, spring configs).
 2. Extracts the `const animations = {…}` block.
@@ -265,11 +266,23 @@ This clones the upstream repo into `/tmp/animate-ui-upstream` on first run (shal
 4. Emits `src/icons/<kebab>.vue` using the standard SFC shape.
 5. Regenerates `src/index.ts` with `Name` + `NameAnimated` exports.
 
-When upstream adds a new icon, re-run the script — it auto-picks up new directories. Icons you've hand-edited are overwritten unless you remove `--force`.
+When upstream adds a new icon, re-run the script — it auto-picks up new directories. Generated files are overwritten on re-run when `--force` is passed; without `--force` they're left alone.
+
+Hand-written files (see below) are **always** preserved, even with `--force`, as long as their header comment contains the sentinel string `Hand-written` or `Hand-ported` — that's how the script tells a deliberate in-repo icon apart from an accidental edit to a generated file.
 
 ### Adding a hand-written icon
 
-Drop a `.vue` file in `src/icons/` matching the pattern of the existing generated files (script + scoped slot + self-wrap branch + `motion.svg` with `:variants=` bindings). `pnpm build` picks it up via the icon-entry glob in `vite.config.ts`, and re-running the codemod regenerates the barrel to include it.
+Drop a `.vue` file in `src/icons/` matching the pattern of the existing generated files (script + scoped slot + self-wrap branch + `motion.svg` with `:variants=` bindings). Include `// Hand-written` (or `// Hand-ported`) in the header comment so the port scripts know to skip it on re-run. `pnpm build` picks it up via the icon-entry glob in `vite.config.ts`, and re-running the codemod regenerates the barrel to include it.
+
+If upstream later ships its own variant of an icon you've already written by hand (e.g. `rocket` gained a `lucide-animated` variant after the initial port), add it as an **additional** variant inside the same SFC and append a new row to the icon's `animations` array in `src/icons-meta.ts` with the correct `source`. Don't rename or remove the hand-written variants — cross-source icons are how this is supposed to look.
+
+To do that splice with less guesswork, run:
+
+```bash
+node scripts/port-pqoqubbw-icons.mjs --augment=<kebab> [--variant-name=<name>]
+```
+
+It parses the upstream `.tsx` and your existing hand-written `.vue`, matches upstream paths to your `pathN` binding keys by comparing `d` attributes (fuzzy on the first 12 chars — small decimal tweaks survive), and prints a ready-to-paste variant block plus the `icons-meta.ts` row addition. The script never writes to the hand-written file — the paste is still a human decision. Default variant name is `lucide-animated`; override with `--variant-name=...` if that would collide with an existing key.
 
 ## License & attributions
 
@@ -277,8 +290,8 @@ MIT for the framework code in `src/core/`.
 
 Icon variants come from several upstream projects — each variant in `iconsMeta` carries a `source` tag for attribution:
 
-- **`animate-ui`** — [github.com/imskyleen/animate-ui](https://github.com/imskyleen/animate-ui) (MIT + Commons Clause). The bulk of the library.
-- **`lucide-animated`** — [lucide-animated.com](https://lucide-animated.com), ported from [pqoqubbw/icons](https://github.com/pqoqubbw/icons) (MIT).
+- **`animate-ui`** — [github.com/imskyleen/animate-ui](https://github.com/imskyleen/animate-ui) (MIT + Commons Clause). Roughly half of the icon variants.
+- **`lucide-animated`** — [lucide-animated.com](https://lucide-animated.com), ported from [pqoqubbw/icons](https://github.com/pqoqubbw/icons) (MIT). The other large chunk.
 - **`hand-written`** — designed in-repo (e.g. `rocket`).
 
 Underlying SVG paths come from [Lucide](https://lucide.dev) (ISC).

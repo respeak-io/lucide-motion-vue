@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // Hand-written (not auto-generated from upstream) — see README "Adding a hand-written icon".
-// SVG geometry from Lucide (ISC). Animation designed in-repo.
+// SVG geometry from Lucide (ISC).
+// Variants: 'default' + 'launch' designed in-repo; 'lucide-animated' adapted
+// from pqoqubbw/icons (MIT) — https://github.com/pqoqubbw/icons.
 import { computed } from 'vue'
 import { motion, type Variants } from 'motion-v'
 import AnimateIcon from '../core/AnimateIcon.vue'
@@ -82,6 +84,52 @@ const animations = {
     },
     path1: {},
     path2: {},
+    path3: {},
+    path4: {},
+  } satisfies Record<string, Variants>,
+
+  // Upstream pqoqubbw/icons motion: subtle 6s rumble on the whole rocket,
+  // with the flame silhouette morphing on a 2s loop. Both repeat infinitely,
+  // so this variant is a looped idle rather than a one-shot trigger.
+  'lucide-animated': {
+    group: {
+      initial: { x: 0, y: 0 },
+      animate: {
+        x: [0, 0, -3, 2, -2, 1, -1, 0],
+        y: [0, -3, 0, -2, -3, -1, -2, 0],
+        transition: {
+          duration: 6,
+          ease: 'easeInOut',
+          repeat: Number.POSITIVE_INFINITY,
+          repeatType: 'reverse',
+          times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1],
+        },
+      },
+    },
+    path1: {},
+    // flame — d-morph sequence from upstream FIRE_VARIANTS. Initial matches
+    // the static d (sans trailing `z`, which the keyframes add and motion
+    // overwrites during the animation).
+    path2: {
+      initial: {
+        d: 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z',
+      },
+      animate: {
+        d: [
+          'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z',
+          'M4.5 16.5c-1.5 1.26-3 5.5-3 5.5s4.74-1 6-2.5c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z',
+          'M4.5 16.5c-1.5 1.26-2.2 4.8-2.2 4.8s3.94-0.3 5.2-1.8c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z',
+          'M4.5 16.5c-1.5 1.26-2.8 5.2-2.8 5.2s4.54-0.7 5.8-2.2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z',
+          'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z',
+        ],
+        transition: {
+          duration: 2,
+          ease: [0.4, 0, 0.2, 1],
+          repeat: Number.POSITIVE_INFINITY,
+          times: [0, 0.2, 0.5, 0.8, 1],
+        },
+      },
+    },
     path3: {},
     path4: {},
   } satisfies Record<string, Variants>,

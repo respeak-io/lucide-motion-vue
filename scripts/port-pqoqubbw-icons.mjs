@@ -43,6 +43,12 @@ const limit = Number((args.find(a => a.startsWith('--limit=')) || '').split('=')
 const only = (args.find(a => a.startsWith('--only=')) || '').split('=')[1]
 const onlySet = only ? new Set(only.split(',').map(s => s.trim())) : null
 const force = args.includes('--force')
+// --augment=<kebab> [--variant-name=<name>]: don't write a full SFC; instead
+// emit a printable variant block, re-keyed to the existing hand-written
+// file's `pathN` bindings, for manual splice into the existing SFC.
+const augment = (args.find(a => a.startsWith('--augment=')) || '').split('=')[1] || null
+const augmentVariantName =
+  (args.find(a => a.startsWith('--variant-name=')) || '').split('=')[1] || 'lucide-animated'
 
 function sh(cmd) { execSync(cmd, { stdio: 'inherit' }) }
 
@@ -899,9 +905,247 @@ ${body}
   writeFileSync(INDEX_FILE, content)
 }
 
+/**
+ * Augment mode: upstream adds an animated variant to an icon we've already
+ * hand-written. Rather than overwriting the SFC (the port script's skip-hand
+ * guard forbids that) or asking the author to eyeball-translate upstream's
+ * VARIANTS blocks onto our `pathN` keys, we parse both sides and emit a
+ * ready-to-paste snippet whose keys are already re-mapped to the hand-written
+ * file's binding names. The final splice is still manual — the script prints,
+ * it doesn't patch — so review stays in the author's hands.
+ */
+
+/**
+ * Read the hand-written SFC for `kebab` and return:
+ *   - pathKeyToD: Map<pathKey, d-attribute> extracted from <motion.path>s
+ *   - groupKey:   name bound to the first non-path motion container, or null
+ *   - existingVariants: Set<string> of top-level keys in `const animations = {}`
+ *   - path:       absolute path to the SFC (for log messages)
+ * Throws if the file is missing or lacks the hand-written/ported sentinel.
+ */
+function readHandWritten(kebab) {
+  const outPath = join(OUT_DIR, `${kebab}.vue`)
+  if (!existsSync(outPath)) throw new Error(`no existing SFC at ${outPath}`)
+  const src = readFileSync(outPath, 'utf8')
+  if (!src.includes('Hand-written') && !src.includes('Hand-ported')) {
+    throw new Error(`${outPath} is not marked Hand-written/Hand-ported — augment only operates on hand-authored icons`)
+  }
+
+  const tplStart = src.indexOf('<template>')
+  const tplEnd = src.indexOf('</template>')
+  if (tplStart < 0 || tplEnd < 0) throw new Error('no <template> block in hand-written SFC')
+  const tpl = src.slice(tplStart, tplEnd)
+
+  const pathKeyToD = new Map()
+  // Self-closing motion.path tags (hand-written icons don't nest children
+  // inside motion.path, so self-close is safe to assume).
+  for (const m of tpl.matchAll(/<motion\.path\b([\s\S]*?)\/>/g)) {
+    const attrs = m[1]
+    const dMatch = attrs.match(/\bd="([^"]+)"/)
+    const varMatch = attrs.match(/:variants="variants\.([A-Za-z0-9_]+)"/)
+    if (!dMatch || !varMatch) continue
+    pathKeyToD.set(varMatch[1], dMatch[1].trim())
+  }
+  if (pathKeyToD.size === 0) throw new Error('no <motion.path> with :variants binding found in hand-written template')
+
+  // Container key: first non-path motion element that binds :variants. Rocket
+  // binds it on <motion.g>; other hand-writtens might bind on <motion.svg>.
+  let groupKey = null
+  for (const m of tpl.matchAll(/<motion\.([a-z]+)\b([\s\S]*?)>/g)) {
+    if (m[1] === 'path') continue
+    const varMatch = m[2].match(/:variants="variants\.([A-Za-z0-9_]+)"/)
+    if (varMatch) { groupKey = varMatch[1]; break }
+  }
+
+  const animIdx = src.indexOf('const animations = {')
+  if (animIdx < 0) throw new Error('no `const animations = {` in hand-written SFC')
+  const braceIdx = src.indexOf('{', animIdx)
+  const { block } = extractBalanced(src, braceIdx)
+  // variantStateKeys' string-tracking treats a leading `'` as entering a
+  // string and misses quoted top-level keys like `'lucide-animated':`. Use a
+  // local walk that matches ident + quoted forms before entering string mode.
+  // Strip comments up front so an apostrophe in a comment (e.g. "flame's")
+  // doesn't trip the string tracker.
+  const existingVariants = new Set()
+  {
+    const body = block
+      .slice(1, -1)
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/[^\n]*/g, '')
+    const keyRe = /^(?:\s*,)?\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][\w-]*))\s*:/
+    let depth = 0, inStr = null
+    for (let i = 0; i < body.length; ) {
+      const c = body[i]
+      if (depth === 0 && !inStr) {
+        const m = body.slice(i).match(keyRe)
+        if (m) { existingVariants.add(m[1] || m[2] || m[3]); i += m[0].length; continue }
+      }
+      if (inStr) {
+        if (c === '\\') { i += 2; continue }
+        if (c === inStr) inStr = null
+        i++; continue
+      }
+      if (c === '"' || c === "'") { inStr = c; i++; continue }
+      if (c === '{' || c === '(' || c === '[') { depth++; i++; continue }
+      if (c === '}' || c === ')' || c === ']') { depth--; i++; continue }
+      i++
+    }
+  }
+
+  return { pathKeyToD, groupKey, existingVariants, path: outPath }
+}
+
+/**
+ * Parse `<kebab>.tsx` from the upstream clone and return the shape we need
+ * to remap it onto a hand-written SFC:
+ *   - svgPart: partName bound to <motion.svg variants={...}> (or null)
+ *   - pathToVariant: [{ d, partName }, ...] one per animated <motion.path>
+ *   - partBodies: Map<partName, variantBody>  (already normal→initial renamed)
+ * Bails out on the same upstream shapes portOne does — sequenced icons,
+ * multi-controls icons, non-{normal,animate} variant states.
+ */
+function upstreamVariantShape(kebab) {
+  const srcPath = join(UPSTREAM_DIR, 'icons', `${kebab}.tsx`)
+  if (!existsSync(srcPath)) throw new Error(`no upstream file at ${srcPath}`)
+  const src = readFileSync(srcPath, 'utf8')
+
+  const enterBlock = src.match(/handleMouseEnter\s*=\s*useCallback[\s\S]*?\[[\s\S]*?\]/)
+  if (enterBlock) {
+    const starts = enterBlock[0].match(/controls\.start\(/g) || []
+    if (starts.length > 1) throw new Error('sequenced upstream: multiple controls.start — can\'t augment')
+  }
+  if ((src.match(/\buseAnimation\s*\(\s*\)/g) || []).length > 1) {
+    throw new Error('multi-controls upstream — can\'t augment')
+  }
+
+  const consts = extractVariantConsts(src)
+  for (const [name, info] of Object.entries(consts)) {
+    const keys = variantStateKeys(info.body)
+    for (const k of keys) {
+      if (k !== 'normal' && k !== 'animate') throw new Error(`non-standard variant state upstream: ${name}.${k}`)
+    }
+    if (!keys.includes('animate')) throw new Error(`upstream ${name} missing 'animate' state`)
+  }
+
+  const { jsx } = extractSvgJsx(src)
+  const preJsx0 = stripInlineInitial(jsx)
+  const { jsx: preJsx, parts: inlineParts } = rewriteInlineVariants(preJsx0)
+
+  const partBodies = new Map()
+  for (const [name, info] of Object.entries(consts)) {
+    partBodies.set(partNameFromConst(name), renameNormalToInitial(info.body))
+  }
+  for (const [part, body] of Object.entries(inlineParts)) {
+    partBodies.set(part, renameNormalToInitial(body))
+  }
+
+  const variantRe = /variants=\{(?:([A-Z_][A-Z0-9_]*)|__INLINE__([A-Za-z0-9]+))\}/
+  const resolvePart = match => {
+    if (match[1]) return partNameFromConst(match[1])
+    return match[2]
+  }
+
+  let svgPart = null
+  const svgTag = preJsx.match(/<motion\.svg\b([^>]*)>/)
+  if (svgTag) {
+    const v = svgTag[1].match(variantRe)
+    if (v) svgPart = resolvePart(v)
+  }
+
+  const pathToVariant = []
+  // Match self-closing <motion.path ... />; upstream pqoqubbw always self-closes.
+  for (const m of preJsx.matchAll(/<motion\.path\b([\s\S]*?)\/>/g)) {
+    const attrs = m[1]
+    const dMatch = attrs.match(/\bd="([^"]+)"/)
+    const v = attrs.match(variantRe)
+    if (!dMatch || !v) continue
+    pathToVariant.push({ d: dMatch[1].trim(), partName: resolvePart(v) })
+  }
+
+  return { svgPart, pathToVariant, partBodies }
+}
+
+/**
+ * Find the hand-written path key whose `d` corresponds to the given upstream
+ * `d`. Tries exact match first, then falls back to matching the first 12
+ * characters (the move-to + first curve command) — hand-written geometry
+ * sometimes has small decimal tweaks that differ from upstream. Throws on
+ * ambiguous matches; returns null if nothing matches.
+ */
+function matchHandWrittenPath(d, pathKeyToD) {
+  const norm = s => s.replace(/\s+/g, ' ').trim()
+  const wanted = norm(d)
+  for (const [key, dh] of pathKeyToD) {
+    if (norm(dh) === wanted) return key
+  }
+  const head = wanted.slice(0, 12)
+  const cands = [...pathKeyToD.entries()].filter(([, dh]) => norm(dh).slice(0, 12) === head)
+  if (cands.length === 1) return cands[0][0]
+  if (cands.length > 1) {
+    throw new Error(`ambiguous d-prefix match for upstream "${wanted.slice(0, 40)}..." → ${cands.map(c => c[0]).join(', ')}`)
+  }
+  return null
+}
+
+function augmentOne(kebab, variantName) {
+  const hand = readHandWritten(kebab)
+  if (hand.existingVariants.has(variantName)) {
+    throw new Error(`variant '${variantName}' already exists in ${hand.path} — pick a different --variant-name`)
+  }
+
+  const up = upstreamVariantShape(kebab)
+
+  const assigned = new Map()
+  if (up.svgPart) {
+    if (!hand.groupKey) {
+      throw new Error(`upstream binds variants on <motion.svg> (part '${up.svgPart}') but hand-written file has no non-path motion container with :variants — add one or skip augment`)
+    }
+    assigned.set(hand.groupKey, up.partBodies.get(up.svgPart))
+  }
+  for (const { d, partName } of up.pathToVariant) {
+    const targetKey = matchHandWrittenPath(d, hand.pathKeyToD)
+    if (!targetKey) {
+      throw new Error(`no hand-written <motion.path> matches upstream d="${d.slice(0, 40)}..." (part '${partName}')`)
+    }
+    if (assigned.has(targetKey)) {
+      throw new Error(`two upstream parts mapped to hand-written key '${targetKey}' — geometry is ambiguous`)
+    }
+    assigned.set(targetKey, up.partBodies.get(partName))
+  }
+
+  // Emit ALL hand-written keys (group + every pathN) so the snippet slots
+  // cleanly into the existing `getVariants(animations)` shape. Keys the
+  // upstream doesn't animate get `{}`.
+  const allKeys = [hand.groupKey, ...hand.pathKeyToD.keys()].filter(Boolean)
+  const lines = allKeys.map(k => {
+    const body = assigned.get(k)
+    return body ? `    ${k}: {${body.trimEnd()}\n    },` : `    ${k}: {},`
+  })
+
+  const snippet = `  '${variantName}': {
+${lines.join('\n')}
+  } satisfies Record<string, Variants>,`
+
+  console.log(`\n# Paste inside \`const animations = { ... }\` in ${hand.path.replace(ROOT + '/', '')}:\n`)
+  console.log(snippet)
+  console.log(`\n# Append to the '${kebab}' row's animations array in src/icons-meta.ts:\n`)
+  console.log(`    { name: '${variantName}', source: 'lucide-animated' }`)
+  console.log()
+}
+
 // --- main ---
 mkdirSync(OUT_DIR, { recursive: true })
 ensureUpstream()
+
+if (augment) {
+  try {
+    augmentOne(augment, augmentVariantName)
+    process.exit(0)
+  } catch (e) {
+    console.error(`augment failed for '${augment}': ${e.message}`)
+    process.exit(1)
+  }
+}
 
 const dirs = readdirSync(join(UPSTREAM_DIR, 'icons'))
   .filter(f => f.endsWith('.tsx'))

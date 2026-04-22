@@ -37,10 +37,19 @@ the animated Lucide collection showcased at [lucide-animated.com](https://lucide
 
 ## hand-written
 
-Icons designed in-repo — currently just `rocket`. SVG geometry is still from
-Lucide; animation is original work.
+Icons designed in-repo — currently just `rocket` (variants `default` and
+`launch`; the `lucide-animated` variant on the same icon is ported from
+pqoqubbw/icons, not hand-written). SVG geometry is still from Lucide;
+animation is original work.
 
 - **License:** MIT for the animation code; ISC for the Lucide geometry.
+
+Hand-written SFCs carry a `// Hand-written` (or `// Hand-ported`) header
+comment. Both port scripts check for this sentinel and refuse to clobber
+matching files, even when invoked with `--force` — a deliberate guard so the
+codemods can be re-run without regressing manual work. An icon can carry a
+mix of hand-written and upstream-ported variants in a single SFC; each
+variant is tracked independently in `iconsMeta` via its `source` field.
 
 ## Lucide
 
