@@ -71,6 +71,15 @@ function go(view: Route['view']) {
         <button
           class="view-tab"
           role="tab"
+          :aria-selected="route.view === 'playground'"
+          :class="{ active: route.view === 'playground' }"
+          @click="go('playground')"
+        >
+          Playground
+        </button>
+        <button
+          class="view-tab"
+          role="tab"
           :aria-selected="route.view === 'docs'"
           :class="{ active: route.view === 'docs' }"
           @click="go('docs')"

@@ -1,18 +1,20 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 /**
- * Tiny hash router. No vue-router dep. Two top-level routes:
+ * Tiny hash router. No vue-router dep. Top-level routes:
  *
- *   #/                → browse (icon grid, search, detail drawer)
- *   #/docs            → docs (intro page)
- *   #/docs/<section>  → docs with a specific section scrolled into view
+ *   #/                      → browse (icon grid, search, detail drawer)
+ *   #/docs                  → docs (intro page)
+ *   #/docs/<section>        → docs with a specific section scrolled into view
+ *   #/playground            → playground (icon picker + prop controls)
+ *   #/playground/<kebab>    → playground with a specific icon preselected
  *
  * The docs view watches `route.section` and jumps to the anchor when it
- * changes, which is also how in-page anchor links continue to work.
+ * changes. The playground treats `section` as the icon's kebab-case slug.
  */
 
 export type Route = {
-  view: 'browse' | 'docs'
+  view: 'browse' | 'docs' | 'playground'
   section: string | null
 }
 
@@ -24,11 +26,17 @@ function parse(hash: string): Route {
   if (head === 'docs') {
     return { view: 'docs', section: rest[0] ?? null }
   }
+  if (head === 'playground') {
+    return { view: 'playground', section: rest[0] ?? null }
+  }
   return { view: 'browse', section: null }
 }
 
 function stringify(r: Route): string {
   if (r.view === 'browse') return '#/'
+  if (r.view === 'playground') {
+    return r.section ? `#/playground/${r.section}` : '#/playground'
+  }
   if (r.section) return `#/docs/${r.section}`
   return '#/docs'
 }

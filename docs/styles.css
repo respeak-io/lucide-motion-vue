@@ -1648,3 +1648,187 @@ header.top .brand h1 {
     text-align: left;
   }
 }
+
+/* ============================================================
+   Playground — 3-col layout: picker | preview+code | controls.
+   Sticky side rails, middle scrolls with the page.
+   ============================================================ */
+
+.pg {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 280px;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.pg-side,
+.pg-knobs {
+  position: sticky;
+  top: 180px;
+  max-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pg-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pg-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pg-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pg-title h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.pg-kebab {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--fg-subtle);
+}
+
+.pg-variants-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  padding: 3px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.pg-stage {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  max-height: 380px;
+  background:
+    radial-gradient(
+      circle at center,
+      var(--accent-soft),
+      transparent 70%
+    ),
+    var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.pg-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: center;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  pointer-events: none;
+}
+
+.pg-stage-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg);
+}
+
+.pg-stage-hint {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--fg-subtle);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* --- Sticky scroll behavior for the side rails --- */
+.pg-side { padding-right: 2px; }
+.pg-knobs { padding-left: 2px; }
+
+/* Knobs panel may be taller than the viewport on small-ish screens —
+   give it its own overflow so the stage/snippet never push it around. */
+.pg-knobs {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.pg-knobs::-webkit-scrollbar { width: 6px; }
+.pg-knobs::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+.pg-knobs::-webkit-scrollbar-track { background: transparent; }
+
+/* --- Responsive --- */
+/* Tablet: drop the right rail, keep the picker. Knobs re-attach under the
+   preview so tweak → preview → copy stays a short eye-trip. Cap the knobs
+   width so swatches don't inflate into buckets when the full column expands. */
+@media (max-width: 1100px) {
+  .pg {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .pg-knobs {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    grid-column: 2;
+    width: 100%;
+    max-width: 360px;
+  }
+}
+
+/* Phone: full stack. Picker becomes a horizontal strip. */
+@media (max-width: 720px) {
+  .pg {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .pg-side,
+  .pg-knobs {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  /* Undo the tablet breakpoint's grid-column: 2, otherwise it auto-creates
+     an implicit column and the layout stays 2-up here. */
+  .pg-knobs {
+    grid-column: auto;
+    max-width: none;
+  }
+  .pg-side {
+    max-height: 220px;
+  }
+  .pg-stage {
+    aspect-ratio: 4 / 3;
+  }
+}

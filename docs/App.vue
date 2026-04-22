@@ -5,6 +5,7 @@ import TopBar from './components/TopBar.vue'
 import ConfettiLayer from './components/ConfettiLayer.vue'
 import BrowseView from './views/BrowseView.vue'
 import DocsView from './views/DocsView.vue'
+import PlaygroundView from './views/PlaygroundView.vue'
 import { useTheme } from './composables/use-theme'
 import { useIconColor } from './composables/use-icon-color'
 import { useRouter, type Route } from './router'
@@ -16,6 +17,7 @@ const { route, push } = useRouter()
 const search = ref('')
 const topBar = ref<InstanceType<typeof TopBar> | null>(null)
 const browseView = ref<InstanceType<typeof BrowseView> | null>(null)
+const playgroundView = ref<InstanceType<typeof PlaygroundView> | null>(null)
 const scrollSentinel = ref<HTMLElement | null>(null)
 
 // Header-compact state driven by an IntersectionObserver on a stable sentinel
@@ -41,8 +43,15 @@ function navigate(r: Route) {
 }
 
 function onGlobalKey(e: KeyboardEvent) {
-  // ⌘K / Ctrl+K to focus search (jump back to browse first if we're in docs)
+  // ⌘K / Ctrl+K to focus search. In playground we focus the picker's own
+  // search; in docs we route back to browse first; in browse we target the
+  // top-bar search.
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    if (route.value.view === 'playground') {
+      e.preventDefault()
+      playgroundView.value?.focusSearch()
+      return
+    }
     if (route.value.view !== 'browse') {
       push({ view: 'browse', section: null })
     }
@@ -56,7 +65,7 @@ function onGlobalKey(e: KeyboardEvent) {
     browseView.value.closeDrawer()
     return
   }
-  // / focuses search when not already typing somewhere
+  // / focuses the contextual search when not already typing somewhere
   if (
     e.key === '/' &&
     !(e.target instanceof HTMLInputElement) &&
@@ -65,6 +74,9 @@ function onGlobalKey(e: KeyboardEvent) {
     if (route.value.view === 'browse') {
       e.preventDefault()
       topBar.value?.focusSearch()
+    } else if (route.value.view === 'playground') {
+      e.preventDefault()
+      playgroundView.value?.focusSearch()
     }
   }
 }
@@ -116,7 +128,7 @@ watch(
       :theme="theme"
       :icon-color="iconColor"
       :route="route"
-      :scrolled="scrolled"
+      :scrolled="scrolled && route.view !== 'playground'"
       @update:search="search = $event"
       @update:icon-color="iconColor = $event"
       @cycle-theme="cycle"
@@ -128,6 +140,13 @@ watch(
       ref="browseView"
       :filtered="filtered"
       :search="search"
+    />
+
+    <PlaygroundView
+      v-if="route.view === 'playground'"
+      ref="playgroundView"
+      :route="route"
+      @navigate="navigate"
     />
 
     <DocsView
