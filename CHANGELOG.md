@@ -7,6 +7,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.4.0] - 2026-04-22
+
 ### Added
 - **+86 icons gain a `lucide-animated` variant, +19 new numbered-sibling icons** imported from [pqoqubbw/icons](https://github.com/pqoqubbw/icons). Existing icons whose upstream counterpart shares the same shape get a new variant you can pick via `animation="lucide-animated"`; icons whose upstream shape genuinely differs (e.g. `send`'s swoosh vs. the original paper-plane) ship as siblings — `Send2`, `Moon2`, `X2`, `AlarmClock2`, etc. — so both the existing animation and the pqoqubbw design stay available. Every new variant carries its `source: 'lucide-animated'` tag in `iconsMeta`.
 - **`triggerTarget` prop** on every icon and on `<AnimateIcon>` — binds hover/tap listeners to an ancestor element instead of the icon's own span wrapper. Accepts `'self'` (default), `'parent'`, or `` `closest:${selector}` ``. Lets you drop animation into existing `<button><Icon /></button>` markup without restructuring to `as="template"` (`<Heart animateOnHover triggerTarget="parent" />`). `as="template"` is still the right tool when one trigger should drive several icons. Exported as type `TriggerTarget` for wrapper authors. New "Migrating existing buttons" section in the README and the docs `Buttons` page.
@@ -52,7 +56,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - Tree-shakable barrel + per-icon subpath imports (`@respeak/lucide-motion-vue/icons/<kebab>`).
 - Docs site with icon gallery, search, and keyboard navigation.
 
-[Unreleased]: https://github.com/respeak-io/lucide-motion-vue/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/respeak-io/lucide-motion-vue/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/respeak-io/lucide-motion-vue/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/respeak-io/lucide-motion-vue/compare/v0.3.0...v0.3.2
 [0.3.0]: https://github.com/respeak-io/lucide-motion-vue/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/respeak-io/lucide-motion-vue/compare/v0.1.1...v0.2.0
