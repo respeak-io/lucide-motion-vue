@@ -15,6 +15,14 @@ const persistOnAnimateEnd = ref(false)
 const playKey = ref(0)
 function replay() { playKey.value++ }
 
+// Scroll to the clip-demo sub-section without touching the hash — the hash
+// router would otherwise treat `#clip-demo` as a top-level route and kick
+// the user out of the docs view.
+function scrollToClipDemo(e: MouseEvent) {
+  e.preventDefault()
+  document.getElementById('clip-demo')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 const snippet = computed(() => {
   const triggerLine =
     trigger.value === 'animate'
@@ -182,7 +190,7 @@ ${triggerLine}
             <td><code>clip</code></td>
             <td><code>boolean</code></td>
             <td><code>false</code></td>
-            <td>Clip the icon's overflow at its bounding box — see <a href="#clip-demo">Clipping overflow</a>.</td>
+            <td>Clip the icon's overflow at its bounding box — see <a href="#clip-demo" @click="scrollToClipDemo">Clipping overflow</a>.</td>
           </tr>
         </tbody>
       </table>
