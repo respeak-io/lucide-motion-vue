@@ -10,6 +10,7 @@
     "nuxt.mjs",
     "nuxt.d.ts",
     "ATTRIBUTIONS.md",
+    "CHANGELOG.md",
     "LICENSE",
     "README.md"
   ],

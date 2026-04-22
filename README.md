@@ -33,6 +33,7 @@
 - [TypeScript](#typescript)
 - [Accessibility](#accessibility)
 - [Docs site](#docs-site)
+- [Changelog](./CHANGELOG.md)
 - [Contributing / regenerating icons](#contributing--regenerating-icons)
 - [License](#license)
 
