@@ -1,8 +1,9 @@
 # @respeak/lucide-motion-vue
 
-> Lucide icons animated with Motion for Vue. 259 tree-shakable Vue 3 SFCs with
-> ergonomic triggers (hover/tap/view/programmatic) and a composable
-> `<AnimateIcon>` wrapper. Peer deps: `vue ^3.3`, `motion-v ^2`.
+> Lucide icons animated with Motion for Vue. 535 tree-shakable Vue 3 SFCs
+> with ergonomic triggers (hover/tap/view/programmatic), a composable
+> `<AnimateIcon>` wrapper, and a Nuxt module for auto-imports. Peer deps:
+> `vue ^3.3`, `motion-v ^2`.
 
 ## Install
 
@@ -29,6 +30,28 @@ import { Heart as StaticHeart } from 'lucide-vue-next'
 import { HeartAnimated } from '@respeak/lucide-motion-vue'
 ```
 
+## Nuxt
+
+Nuxt 3 apps can register every icon + `<AnimateIcon>` as auto-imports via the
+shipped module. No imports needed in templates.
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['@respeak/lucide-motion-vue/nuxt'],
+})
+```
+
+Default naming is suffixed: `<HeartAnimated>`, `<Link2Animated>`, …, plus
+`<AnimateIcon>` unchanged. This is collision-free next to `lucide-vue-next`'s
+static `<Heart>`, `<Star>`, etc. Configure with:
+
+```ts
+lucideMotion: { prefix: 'M', suffix: '' }   // → <MHeart>, <MLink2>
+```
+
+Per-icon tree-shaking is preserved under Nuxt's component loader.
+
 ## Triggers (pick one)
 
 Every icon accepts these props. Pick exactly **one** of the triggers, or use
@@ -45,13 +68,15 @@ String form selects a named variant instead of the default.
 
 ### Props (also on every icon)
 
-| prop                  | type      | default     | description                          |
-|-----------------------|-----------|-------------|--------------------------------------|
-| `size`                | `number`  | `28`        | Width/height in px.                  |
-| `strokeWidth`         | `number`  | `2`         | SVG stroke width.                    |
-| `animation`           | `string`  | `'default'` | Which named variant group to use.    |
-| `persistOnAnimateEnd` | `boolean` | `false`     | Keep final state after playback.     |
-| `initialOnAnimateEnd` | `boolean` | `false`     | Force snap back to initial state.    |
+| prop                  | type                                          | default     | description                                                                       |
+|-----------------------|-----------------------------------------------|-------------|-----------------------------------------------------------------------------------|
+| `size`                | `number`                                      | `28`        | Width/height in px.                                                               |
+| `strokeWidth`         | `number`                                      | `2`         | SVG stroke width.                                                                 |
+| `animation`           | `string`                                      | `'default'` | Which named variant group to use.                                                 |
+| `persistOnAnimateEnd` | `boolean`                                     | `false`     | Keep final state after playback.                                                  |
+| `initialOnAnimateEnd` | `boolean`                                     | `false`     | Force snap back to initial state.                                                 |
+| `clip`                | `boolean`                                     | `false`     | Clip overflow at the wrapper's box. Use for exit animations (send, rocket launch).|
+| `triggerTarget`       | `'self' \| 'parent' \| \`closest:${string}\`` | `'self'`    | Bind hover/tap to an ancestor — for drop-in use inside existing button markup.    |
 
 ## Patterns
 
@@ -67,16 +92,43 @@ import { Heart } from '@respeak/lucide-motion-vue'
 </template>
 ```
 
-### Whole button as trigger
+### Drop into an existing button (`triggerTarget`)
 
-Wrap with `<AnimateIcon as="template">` and spread the exposed `on` object.
-The wrapper renders no DOM — the button itself is the hit target.
+When markup is already `<button><Icon /></button>` and you don't want to
+restructure to `as="template"`, bind the trigger to the parent instead:
+
+```vue
+<button class="btn">
+  <Heart animateOnHover triggerTarget="parent" :size="18" />
+  Favorite
+</button>
+```
+
+For nested wrappers, use `closest:<selector>`:
+
+```vue
+<button class="btn">
+  <span class="icon-slot">
+    <Heart animateOnHover triggerTarget="closest:button" :size="18" />
+  </span>
+  Favorite
+</button>
+```
+
+Only `'self'` (the default) and `'parent'` + `closest:…` apply — they bind
+listeners to an ancestor DOM element instead of the icon's own span.
+
+### Whole button as trigger (one trigger, anywhere)
+
+Use `<AnimateIcon as="template">` when one trigger should drive **multiple**
+icons, or when you want zero extra DOM:
 
 ```vue
 <AnimateIcon animateOnHover as="template" v-slot="{ on }">
   <button v-on="on" class="btn">
     <Heart :size="18" />
-    Favorite
+    <Trash2 :size="18" />
+    Delete
   </button>
 </AnimateIcon>
 ```
@@ -92,9 +144,11 @@ With Vuetify:
 </AnimateIcon>
 ```
 
-### One trigger, many icons
+Rule of thumb: `triggerTarget` for a single icon inside existing markup;
+`as="template"` when many icons share one trigger, or when the wrapper is
+a custom component that already spreads `v-on`.
 
-Default `span` mode wraps children and catches trigger events for all of them:
+### One trigger, many icons (default span mode)
 
 ```vue
 <AnimateIcon animateOnHover>
@@ -110,6 +164,7 @@ Some icons ship multiple named animations. Use the `animation` prop:
 ```vue
 <Heart animateOnHover animation="fill" :size="32" />
 <Link2 animateOnHover animation="unlink" :size="32" />
+<Rocket animateOnView animation="launch" clip :size="32" />
 ```
 
 List variants at runtime:
@@ -127,6 +182,37 @@ iconsMeta.find(m => m.pascal === 'Heart')?.animations
 iconsMeta.find(m => m.pascal === 'Heart')?.animations.map(a => a.name)
 // → ['default', 'fill']
 ```
+
+Many icons also carry a `lucide-animated` variant in addition to their
+`animate-ui` default — filter by source to discover them:
+
+```ts
+iconsMeta
+  .filter(m => m.animations.some(a => a.source === 'lucide-animated'))
+  .length
+// Hundreds of icons, each selectable via animation="lucide-animated"
+```
+
+Icons whose upstream pqoqubbw counterpart has a structurally different
+shape ship as **numbered siblings** — e.g. `Send2`, `Moon2`, `X2`,
+`AlarmClock2` — so both the original and the alternate animation stay
+available. Siblings have their own `Pascal` name and default variant.
+
+### Clip overflow for exit animations
+
+A few icons intentionally move parts outside their viewBox — `Send`'s plane
+flies off before returning; `Rocket`'s launch variant lifts off. Those
+animations read correctly only when overflow is clipped (otherwise the part
+visibly tours around the page instead of disappearing). Set `clip`:
+
+```vue
+<Send animateOnHover clip />
+<Rocket animateOnView clip animation="launch" />
+```
+
+Off by default because other icons (e.g. `Link2`'s burst particles) render
+outside their box on purpose. Only opt-in for animations that "leave" the
+frame.
 
 ### Color
 
@@ -204,23 +290,33 @@ const status = ref<Status>('idle')
 ## TypeScript
 
 ```ts
-import type { IconTriggerProps, IconMeta } from '@respeak/lucide-motion-vue'
+import type {
+  IconTriggerProps,
+  IconMeta,
+  TriggerTarget,
+} from '@respeak/lucide-motion-vue'
 ```
 
 - Every icon has typed props.
-- `IconTriggerProps` is the shared prop set (size/strokeWidth/triggers).
+- `IconTriggerProps` is the shared prop set (size/strokeWidth/triggers/clip/triggerTarget).
 - `IconMeta` is `{ kebab, pascal, animations: Array<{ name, source }> }`
   where `source` is `'animate-ui' | 'lucide-animated' | 'hand-written'`.
   See `ATTRIBUTIONS.md` for what each source means and its license.
+- `TriggerTarget` is `'self' | 'parent' | \`closest:${string}\``.
 - No `any` in the public API.
 
 ## Do / don't
 
-- **Do** wrap buttons/cards/links in `<AnimateIcon as="template">` when the
-  whole element should be the trigger. Users expect a bigger hit area than
-  the 16–24px SVG.
+- **Do** use `triggerTarget="parent"` when dropping a single icon into
+  existing `<button><Icon /></button>` markup.
+- **Do** wrap with `<AnimateIcon as="template">` when **multiple** icons
+  share one trigger, or the hit target is a complex custom component.
+- **Do** set `clip` on "exit" animations (`Send`, `Rocket` launch, etc.) so
+  the off-viewBox motion reads as "left the frame."
 - **Do** use `currentColor` via `color`/Tailwind text utilities.
 - **Don't** add custom color props — there aren't any.
+- **Don't** set `clip` on icons whose variants deliberately paint outside
+  the viewBox (`Link2`'s burst particles); it will hide the effect.
 - **Don't** render every icon on a page with `animateOnView` (distracting).
   Prefer `animateOnHover` for affordances, reserve `animateOnView` for hero
   moments.
