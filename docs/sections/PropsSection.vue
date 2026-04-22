@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Heart } from '@respeak/lucide-motion-vue'
+import { Heart, Send } from '@respeak/lucide-motion-vue'
 import CodeBlock from '../components/CodeBlock.vue'
 
 type TriggerProp = 'animateOnHover' | 'animateOnTap' | 'animateOnView' | 'animate'
@@ -178,6 +178,12 @@ ${triggerLine}
             <td><code>false</code></td>
             <td>Force snap to <code>initial</code> when animation ends.</td>
           </tr>
+          <tr>
+            <td><code>clip</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Clip the icon's overflow at its bounding box — see <a href="#clip-demo">Clipping overflow</a>.</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -244,6 +250,12 @@ ${triggerLine}
             <td>Force snap to <code>initial</code> when animation ends.</td>
           </tr>
           <tr>
+            <td><code>clip</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Clip overflow at the wrapper's box — for "exit" animations.</td>
+          </tr>
+          <tr>
             <td><code>as</code></td>
             <td><code>'span' | 'template'</code></td>
             <td><code>'span'</code></td>
@@ -274,5 +286,95 @@ ${triggerLine}
       <code>LoaderPinwheel</code>, …) bake <code>repeat: Infinity</code> into
       their variants, so they loop as soon as you set any trigger.
     </p>
+
+    <h3 id="clip-demo">Clipping overflow</h3>
+    <p>
+      A few animations deliberately move parts of the icon outside its
+      viewBox for effect — <code>Send</code>'s plane flies off before
+      returning; <code>Rocket</code>'s launch variant lifts off and out of
+      frame. Those read correctly only when the overflow is hidden:
+      otherwise you see the plane visibly tour around the page instead of
+      disappearing. <code>clip</code> is the opt-in switch.
+    </p>
+
+    <div class="doc-demo">
+      <div class="demo-stage demo-stage-row clip-demo-row">
+        <figure class="clip-sample">
+          <div class="clip-sample-stage">
+            <Send animateOnHover :size="56" />
+          </div>
+          <figcaption>
+            <code>&lt;Send animateOnHover /&gt;</code>
+            <span class="muted">without clip — plane flies out of frame</span>
+          </figcaption>
+        </figure>
+
+        <figure class="clip-sample">
+          <div class="clip-sample-stage clip-on">
+            <Send animateOnHover clip :size="56" />
+          </div>
+          <figcaption>
+            <code>&lt;Send animateOnHover clip /&gt;</code>
+            <span class="muted">with clip — disappears = "sent"</span>
+          </figcaption>
+        </figure>
+      </div>
+      <CodeBlock lang="vue" :code="`<Send animateOnHover clip />
+<Rocket animateOnView clip animation=&quot;launch&quot; />`" />
+    </div>
+    <p class="muted">
+      Off by default because other icons (<code>Link2</code>'s burst
+      particles, some lucide-animated variants) render outside their box on
+      purpose and would break with clipping on. Turn it on per-use.
+    </p>
   </section>
 </template>
+
+<style scoped>
+.clip-demo-row {
+  gap: 32px;
+  justify-content: space-around;
+  align-items: flex-end;
+  padding: 24px;
+}
+
+.clip-sample {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.clip-sample-stage {
+  /* Roomy container so the plane's off-viewBox animation is visible when
+     clipping is off. Same size for both samples so the visual comparison
+     is apples-to-apples. */
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.clip-sample figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--fg);
+}
+
+.clip-sample figcaption code {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.clip-sample figcaption .muted {
+  font-size: 0.7rem;
+}
+</style>

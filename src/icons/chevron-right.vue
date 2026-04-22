@@ -40,6 +40,12 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    path: {
+            initial: { x: 0 },
+            animate: { x: [0, 2, 0] },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
@@ -57,6 +63,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <ChevronRight :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

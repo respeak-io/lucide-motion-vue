@@ -16,6 +16,7 @@ const props = defineProps<{
   strokeWidth: number
   color: string | null
   persist: boolean
+  clip: boolean
 }>()
 
 const emit = defineEmits<{
@@ -25,6 +26,7 @@ const emit = defineEmits<{
   (e: 'update:strokeWidth', v: number): void
   (e: 'update:color', v: string | null): void
   (e: 'update:persist', v: boolean): void
+  (e: 'update:clip', v: boolean): void
   (e: 'replay'): void
 }>()
 
@@ -173,6 +175,22 @@ function pickCustom(e: Event) {
         <span class="pg-check-hint">
           Stay on the final frame instead of snapping back to the start when
           the animation ends.
+        </span>
+      </span>
+    </label>
+
+    <label class="pg-check">
+      <input
+        type="checkbox"
+        :checked="clip"
+        @change="emit('update:clip', ($event.target as HTMLInputElement).checked)"
+      />
+      <span class="pg-check-main">
+        <span class="pg-check-label">clip</span>
+        <span class="pg-check-hint">
+          Hide overflow at the icon's bounding box. Use for animations that
+          move parts of the icon off-screen (e.g. <code>send</code>,
+          <code>rocket</code>'s launch).
         </span>
       </span>
     </label>

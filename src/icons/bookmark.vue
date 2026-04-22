@@ -32,6 +32,19 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    path: {
+  initial: { scaleY: 1, scaleX: 1 },
+  animate: {
+    scaleY: [1, 1.3, 0.9, 1.05, 1],
+    scaleX: [1, 0.9, 1.1, 0.95, 1],
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
@@ -49,6 +62,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <Bookmark :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

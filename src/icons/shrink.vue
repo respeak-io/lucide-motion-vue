@@ -113,6 +113,24 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    path1: {
+              initial: { translateX: "0%", translateY: "0%" },
+              animate: { translateX: "1px", translateY: "1px" },
+    },
+    path3: {
+              initial: { translateX: "0%", translateY: "0%" },
+              animate: { translateX: "-1px", translateY: "1px" },
+    },
+    path2: {
+              initial: { translateX: "0%", translateY: "0%" },
+              animate: { translateX: "1px", translateY: "-1px" },
+    },
+    path4: {
+              initial: { translateX: "0%", translateY: "0%" },
+              animate: { translateX: "-1px", translateY: "-1px" },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
@@ -130,6 +148,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <Shrink :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

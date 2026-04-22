@@ -67,6 +67,59 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    line1: {
+  initial: {
+    rotate: 0,
+    y: 0,
+    opacity: 1,
+  },
+  animate: (custom: number) => ({
+    rotate: custom === 1 ? 45 : custom === 3 ? -45 : 0,
+    y: custom === 1 ? 6 : custom === 3 ? -6 : 0,
+    opacity: custom === 2 ? 0 : 1,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20,
+    },
+  }),
+    },
+    line2: {
+  initial: {
+    rotate: 0,
+    y: 0,
+    opacity: 1,
+  },
+  animate: (custom: number) => ({
+    rotate: custom === 1 ? 45 : custom === 3 ? -45 : 0,
+    y: custom === 1 ? 6 : custom === 3 ? -6 : 0,
+    opacity: custom === 2 ? 0 : 1,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20,
+    },
+  }),
+    },
+    line3: {
+  initial: {
+    rotate: 0,
+    y: 0,
+    opacity: 1,
+  },
+  animate: (custom: number) => ({
+    rotate: custom === 1 ? 45 : custom === 3 ? -45 : 0,
+    y: custom === 1 ? 6 : custom === 3 ? -6 : 0,
+    opacity: custom === 2 ? 0 : 1,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20,
+    },
+  }),
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
@@ -84,6 +137,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <Menu :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

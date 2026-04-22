@@ -39,6 +39,36 @@ const animations = {
       animate: { d: 'M10 15h4' },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    rect: {
+  initial: {
+    translateY: 0,
+    transition: {
+      duration: 0.2,
+      type: "spring",
+      stiffness: 200,
+      damping: 25,
+    },
+  },
+  animate: {
+    translateY: -1.5,
+    transition: {
+      duration: 0.2,
+      type: "spring",
+      stiffness: 200,
+      damping: 25,
+    },
+  },
+    },
+    body: {
+  initial: { d: "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" },
+  animate: { d: "M4 11v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V11" },
+    },
+    slot: {
+  initial: { d: "M10 12h4" },
+  animate: { d: "M10 15h4" },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
@@ -56,6 +86,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <Archive :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

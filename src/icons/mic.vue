@@ -49,6 +49,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <Mic :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

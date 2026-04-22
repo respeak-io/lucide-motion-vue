@@ -41,6 +41,24 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    polygon: {
+  initial: {
+    x: 0,
+    rotate: 0,
+  },
+  animate: {
+    x: [0, -1, 2, 0],
+    rotate: [0, -10, 0, 0],
+    transition: {
+      duration: 0.5,
+      times: [0, 0.2, 0.5, 1],
+      stiffness: 260,
+      damping: 20,
+    },
+  },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
@@ -58,6 +76,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <Play :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

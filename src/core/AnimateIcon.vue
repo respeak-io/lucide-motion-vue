@@ -13,6 +13,14 @@ const props = withDefaults(
     persistOnAnimateEnd?: boolean
     initialOnAnimateEnd?: boolean
     /**
+     * Clip overflow at the span's box — use when the active animation moves
+     * parts of the icon outside its viewBox on purpose (e.g. `send`'s plane
+     * flies off-screen before returning). Default off so icons that
+     * deliberately render outside their box (e.g. link-2's burst particles)
+     * keep working.
+     */
+    clip?: boolean
+    /**
      * "span"     — render a <motion.span> wrapper that catches events (default).
      * "template" — render slot content only; expose `{ on, viewRef }` so the
      *              consumer binds them to any element (e.g. a <v-btn>).
@@ -28,6 +36,7 @@ const props = withDefaults(
     animation: 'default',
     persistOnAnimateEnd: false,
     initialOnAnimateEnd: false,
+    clip: false,
     as: 'span',
   },
 )
@@ -48,7 +57,15 @@ function start(t: Trigger) {
   // fresh-mount animations (e.g. the drawer preview) would see scale tween
   // but pathLength silently no-op. rAF gives motion-v that first frame.
   // Still needed under motion-v 2.2.1 — confirmed 2026-04-21.
-  requestAnimationFrame(() => { current.value = 'animate' })
+  //
+  // SSR path (Nuxt, vite-ssg, …) has no rAF. Nothing visual can happen there
+  // anyway — motion-v only animates client-side once mounted — so just flip
+  // to the 'animate' variant directly and let client hydration replay it.
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => { current.value = 'animate' })
+  } else {
+    current.value = 'animate'
+  }
 }
 
 function stop() {
@@ -118,7 +135,11 @@ defineSlots<{
   <span
     v-else
     ref="viewRef"
-    style="display: inline-flex; line-height: 0;"
+    :style="{
+      display: 'inline-flex',
+      lineHeight: 0,
+      overflow: clip ? 'hidden' : undefined,
+    }"
     @mouseenter="onEnter"
     @mouseleave="onLeave"
     @pointerdown="onDown"

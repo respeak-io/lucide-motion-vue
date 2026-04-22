@@ -7,6 +7,8 @@
   "sideEffects": false,
   "files": [
     "dist",
+    "nuxt.mjs",
+    "nuxt.d.ts",
     "ATTRIBUTIONS.md",
     "LICENSE",
     "README.md"
@@ -14,6 +16,8 @@
   "keywords": [
     "vue",
     "vue3",
+    "nuxt",
+    "nuxt-module",
     "icons",
     "lucide",
     "motion",
@@ -42,6 +46,10 @@
     "./icons/*": {
       "types": "./dist/icons/*.vue.d.ts",
       "import": "./dist/icons/*.js"
+    },
+    "./nuxt": {
+      "types": "./nuxt.d.ts",
+      "import": "./nuxt.mjs"
     }
   },
   "scripts": {
@@ -62,10 +70,18 @@
     "access": "public"
   },
   "peerDependencies": {
+    "@nuxt/kit": "^3.0.0",
     "motion-v": "^2",
     "vue": "^3.3"
   },
+  "peerDependenciesMeta": {
+    "@nuxt/kit": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@nuxt/kit": "^3.15.0",
+    "@nuxt/schema": "^3.15.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "motion-v": "^2.2.1",
     "playwright": "^1.59.1",

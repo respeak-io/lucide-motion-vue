@@ -135,6 +135,86 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    line1: {
+            initial: {
+              x2: 14,
+            },
+            animate: {
+              x2: 10,
+            },
+    },
+    line2: {
+            initial: {
+              x1: 10,
+            },
+            animate: {
+              x1: 5,
+            },
+    },
+    line3: {
+            initial: {
+              x2: 12,
+            },
+            animate: {
+              x2: 18,
+            },
+    },
+    line4: {
+            initial: {
+              x1: 8,
+            },
+            animate: {
+              x1: 13,
+            },
+    },
+    line5: {
+            initial: {
+              x2: 12,
+            },
+            animate: {
+              x2: 4,
+            },
+    },
+    line6: {
+            initial: {
+              x1: 16,
+            },
+            animate: {
+              x1: 8,
+            },
+    },
+    line7: {
+            initial: {
+              x1: 14,
+              x2: 14,
+            },
+            animate: {
+              x1: 9,
+              x2: 9,
+            },
+    },
+    line8: {
+            initial: {
+              x1: 8,
+              x2: 8,
+            },
+            animate: {
+              x1: 14,
+              x2: 14,
+            },
+    },
+    line9: {
+            initial: {
+              x1: 16,
+              x2: 16,
+            },
+            animate: {
+              x1: 8,
+              x2: 8,
+            },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
@@ -152,6 +232,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <SlidersHorizontal :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

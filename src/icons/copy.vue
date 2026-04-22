@@ -77,6 +77,16 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    rect: {
+              initial: { translateY: 0, translateX: 0 },
+              animate: { translateY: -3, translateX: -3 },
+    },
+    path: {
+              initial: { x: 0, y: 0 },
+              animate: { x: 3, y: 3 },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
@@ -94,6 +104,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <Copy :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

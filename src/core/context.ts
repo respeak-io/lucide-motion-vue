@@ -50,6 +50,16 @@ export interface IconTriggerProps {
   persistOnAnimateEnd?: boolean
   initialOnAnimateEnd?: boolean
   size?: number
+  /**
+   * Clip the icon's overflow at its bounding box. Opt-in because a handful of
+   * animations (send's plane flying off, rocket's launch variant lifting off,
+   * etc.) read correctly *only* when parts that move outside the viewBox are
+   * hidden — without clipping you see the plane tour around the page. Other
+   * icons deliberately render outside their box (link-2's burst particles,
+   * some lucide-animated variants) and would break if clipping were on by
+   * default, so the caller decides per-use.
+   */
+  clip?: boolean
 }
 
 export function hasOwnTriggers(p: IconTriggerProps): boolean {

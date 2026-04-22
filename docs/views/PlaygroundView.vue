@@ -34,6 +34,7 @@ const size = ref(96)
 const strokeWidth = ref(2)
 const color = ref<string | null>(null)
 const persist = ref(false)
+const clip = ref(false)
 const replayKey = ref(0)
 
 // Re-key the icon whenever something that should visibly reset changes,
@@ -119,6 +120,9 @@ const snippet = computed(() => {
   if (persist.value) {
     lines.push(`  persistOnAnimateEnd`)
   }
+  if (clip.value) {
+    lines.push(`  clip`)
+  }
   lines.push(`/>`)
   return lines.join('\n')
 })
@@ -174,6 +178,7 @@ defineExpose({
             :size="size"
             :strokeWidth="strokeWidth"
             :persistOnAnimateEnd="persist"
+            :clip="clip"
           />
         </div>
         <span class="pg-stage-hint">
@@ -197,12 +202,14 @@ defineExpose({
         :stroke-width="strokeWidth"
         :color="color"
         :persist="persist"
+        :clip="clip"
         @update:variant="variant = $event"
         @update:trigger="trigger = $event"
         @update:size="size = $event"
         @update:stroke-width="strokeWidth = $event"
         @update:color="color = $event"
         @update:persist="persist = $event"
+        @update:clip="clip = $event"
         @replay="replay"
       />
     </aside>

@@ -1,0 +1,16 @@
+{
+  "name": "lucide-motion-vue-nuxt-playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "prepare": "nuxt prepare",
+    "build": "nuxt build"
+  },
+  "dependencies": {
+    "@respeak/lucide-motion-vue": "workspace:*",
+    "motion-v": "^2.2.1",
+    "nuxt": "^3.15.0",
+    "vue": "^3.5.13"
+  }
+}

@@ -144,6 +144,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <GalleryVerticalEnd :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

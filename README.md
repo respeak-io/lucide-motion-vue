@@ -25,6 +25,7 @@
 - [Usage](#usage)
   - [Collision-safe names](#collision-safe-names)
   - [Per-icon subpath imports](#per-icon-subpath-imports)
+- [Nuxt module](#nuxt-module)
 - [Props](#props)
 - [Color](#color)
 - [`<AnimateIcon>` wrapper](#animateicon-wrapper)
@@ -100,6 +101,39 @@ import BetweenVerticalStart from '@respeak/lucide-motion-vue/icons/between-verti
 
 Tree-shaking works with either import style (package is ESM + `"sideEffects": false`).
 
+## Nuxt module
+
+For Nuxt 3 apps the package ships a module at `@respeak/lucide-motion-vue/nuxt` that auto-registers `<AnimateIcon>` and every icon — no imports needed in your templates.
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['@respeak/lucide-motion-vue/nuxt'],
+})
+```
+
+```vue
+<!-- any .vue file, no imports needed -->
+<HeartAnimated animateOnHover />
+<Link2Animated animateOnTap animation="unlink" />
+<AnimateIcon animateOnHover as="template" v-slot="{ on }">
+  <button v-on="on">
+    <HeartAnimated :size="20" /> Favorite
+  </button>
+</AnimateIcon>
+```
+
+The default naming is **suffixed** (`<HeartAnimated>`, `<StarAnimated>`, …) so the module coexists with `lucide-vue-next`'s static `<Heart>`, `<Star>` without collision — keep both installed and pick per-usage. Override the scheme in `nuxt.config` if you want something shorter:
+
+```ts
+export default defineNuxtConfig({
+  modules: ['@respeak/lucide-motion-vue/nuxt'],
+  lucideMotion: { prefix: 'M', suffix: '' },  // → <MHeart>, <MLink2>
+})
+```
+
+Per-icon tree-shaking is preserved — templates that only reference `<HeartAnimated>` ship one chunk, not the whole library.
+
 ## Props
 
 Every icon accepts:
@@ -115,8 +149,18 @@ Every icon accepts:
 | `animation`           | `string`                 | `default`| Which named variant group to pull from (e.g. `fill`).         |
 | `persistOnAnimateEnd` | `boolean`                | `false`  | Keep final state instead of returning to `initial`.           |
 | `initialOnAnimateEnd` | `boolean`                | `false`  | Force snap to `initial` when animation ends.                  |
+| `clip`                | `boolean`                | `false`  | Clip the icon's overflow at its bounding box — see below.     |
 
 Available `animation` names are icon-specific and mirror upstream animate-ui — e.g. `Heart` supports `default` and `fill`, `BetweenVerticalStart` supports `default` and `default-loop`, `Link2` supports `default`/`apart`/`unlink`/`link`. See [Discovering variants](#discovering-variants-iconsmeta) for a programmatic way to list them, or browse the docs site in `docs/` (`pnpm docs:dev`).
+
+A few animations deliberately move parts of the icon outside its viewBox — `send`'s plane flies off before returning; `rocket`'s launch variant lifts off and out. Those read correctly only when the overflow is hidden, so they disappear on exit instead of touring around the rest of the page. That's what `clip` is for:
+
+```vue
+<SendAnimated animateOnHover clip />
+<Rocket animateOnView clip animation="launch" />
+```
+
+Off by default because other icons (e.g. `link-2`'s burst particles) are designed to render outside their box and would break with clipping on.
 
 <p align="center">
   <img src="./docs/closeup.gif" alt="Link2 cycling through its five animation variants" width="320" />
@@ -158,6 +202,7 @@ All the trigger/animation props below also work directly on individual icons; th
 | `animation`           | `string`            | `default` | Which named variant group to pull from.                    |
 | `persistOnAnimateEnd` | `boolean`           | `false`   | Keep final state instead of returning to `initial`.        |
 | `initialOnAnimateEnd` | `boolean`           | `false`   | Force snap to `initial` when animation ends.               |
+| `clip`                | `boolean`           | `false`   | Clip overflow at the wrapper's box — for "exit" animations. |
 | `as`                  | `'span' \| 'template'` | `'span'` | Rendering mode — see below.                              |
 
 ### Rendering modes

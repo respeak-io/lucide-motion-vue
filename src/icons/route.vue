@@ -59,6 +59,40 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    circle1: {
+  initial: {
+    pathLength: 1,
+    opacity: 1,
+  },
+  animate: {
+    pathLength: [0, 1],
+    opacity: [0, 1],
+  },
+    },
+    path: {
+              initial: {
+                pathLength: 1,
+                opacity: 1,
+                pathOffset: 0,
+              },
+              animate: {
+                pathLength: [0, 1],
+                opacity: [0, 1],
+                pathOffset: [1, 0],
+              },
+    },
+    circle2: {
+  initial: {
+    pathLength: 1,
+    opacity: 1,
+  },
+  animate: {
+    pathLength: [0, 1],
+    opacity: [0, 1],
+  },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
@@ -76,6 +110,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <Route :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

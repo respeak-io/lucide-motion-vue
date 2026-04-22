@@ -7,3 +7,6 @@ docs-dist
 .tmp-hero
 .tmp-social
 .tmp-closeup
+nuxt-playground/.nuxt
+nuxt-playground/.output
+nuxt-playground/node_modules
