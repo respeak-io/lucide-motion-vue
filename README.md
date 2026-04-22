@@ -151,6 +151,7 @@ Every icon accepts:
 | `persistOnAnimateEnd` | `boolean`                | `false`  | Keep final state instead of returning to `initial`.           |
 | `initialOnAnimateEnd` | `boolean`                | `false`  | Force snap to `initial` when animation ends.                  |
 | `clip`                | `boolean`                | `false`  | Clip the icon's overflow at its bounding box — see below.     |
+| `triggerTarget`       | `'self' \| 'parent' \| \`closest:${string}\`` | `'self'` | Bind hover/tap to an ancestor — see [Migrating existing buttons](#migrating-existing-buttons-triggertarget). |
 
 Available `animation` names are icon-specific and mirror upstream animate-ui — e.g. `Heart` supports `default` and `fill`, `BetweenVerticalStart` supports `default` and `default-loop`, `Link2` supports `default`/`apart`/`unlink`/`link`. See [Discovering variants](#discovering-variants-iconsmeta) for a programmatic way to list them, or browse the docs site in `docs/` (`pnpm docs:dev`).
 
@@ -205,6 +206,7 @@ All the trigger/animation props below also work directly on individual icons; th
 | `initialOnAnimateEnd` | `boolean`           | `false`   | Force snap to `initial` when animation ends.               |
 | `clip`                | `boolean`           | `false`   | Clip overflow at the wrapper's box — for "exit" animations. |
 | `as`                  | `'span' \| 'template'` | `'span'` | Rendering mode — see below.                              |
+| `triggerTarget`       | `'self' \| 'parent' \| \`closest:${string}\`` | `'self'` | Bind hover/tap to an ancestor instead of the wrapper — see below. |
 
 ### Rendering modes
 
@@ -226,6 +228,33 @@ All the trigger/animation props below also work directly on individual icons; th
   </button>
 </AnimateIcon>
 ```
+
+### Migrating existing buttons (`triggerTarget`)
+
+If you already have `<button><Icon /></button>` markup and want hover to fire on the whole button, set `triggerTarget` on the icon itself — no wrapper, no markup refactor:
+
+```vue
+<!-- Drop-in: the existing button stays untouched. -->
+<button class="btn">
+  <Heart animateOnHover triggerTarget="parent" :size="18" />
+  Favorite
+</button>
+
+<!-- Extra wrappers between icon and button? Climb with closest. -->
+<button class="btn">
+  <span class="flex gap-2">
+    <Trash2 animateOnHover triggerTarget="closest:button" :size="18" />
+    Delete
+  </span>
+</button>
+```
+
+Which one to reach for:
+
+- **`triggerTarget="parent"` / `"closest:…"`** — best for *migrations* and single-icon buttons. Additive (two props), no markup change.
+- **`as="template"`** — best when one trigger should drive *several* icons, or when the trigger isn't an ancestor of the icon.
+
+`triggerTarget` applies in `as="span"` mode only. In `as="template"` mode you already pick the trigger element by binding `on`.
 
 ## Discovering variants (`iconsMeta`)
 

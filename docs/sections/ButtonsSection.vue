@@ -21,6 +21,20 @@ const vuetifySnippet = `<AnimateIcon animateOnHover as="template" v-slot="{ on }
     Favorite
   </v-btn>
 </AnimateIcon>`
+
+const migrationSnippet = `<!-- Drop-in: the existing button stays untouched. -->
+<button class="btn">
+  <Heart animateOnHover triggerTarget="parent" :size="18" />
+  Favorite
+</button>
+
+<!-- Extra wrappers between icon and button? Climb with closest. -->
+<button class="btn">
+  <span class="flex gap-2">
+    <Trash2 animateOnHover triggerTarget="closest:button" :size="18" />
+    Delete
+  </span>
+</button>`
 </script>
 
 <template>
@@ -66,6 +80,34 @@ const vuetifySnippet = `<AnimateIcon animateOnHover as="template" v-slot="{ on }
       <code>&lt;v-btn&gt;</code>.
     </p>
     <CodeBlock :code="vuetifySnippet" lang="vue" />
+
+    <h3>Migrating existing buttons</h3>
+    <p>
+      Already have <code>&lt;button&gt;&lt;Icon /&gt;&lt;/button&gt;</code>
+      markup and just want to animate on button-hover? Set
+      <code>triggerTarget="parent"</code> on the icon — no wrapper, no markup
+      refactor. If the icon sits inside extra wrappers, use
+      <code>triggerTarget="closest:button"</code> (or any selector) to climb
+      ancestors. Use <code>as="template"</code> instead when one trigger
+      should drive <em>several</em> icons.
+    </p>
+
+    <div class="doc-demo">
+      <div class="demo-stage demo-stage-row">
+        <button class="demo-btn">
+          <Heart animateOnHover triggerTarget="parent" :size="18" />
+          Favorite
+        </button>
+
+        <button class="demo-btn demo-btn-danger">
+          <span style="display: inline-flex; gap: 0.5rem; align-items: center">
+            <Trash2 animateOnHover triggerTarget="closest:button" :size="18" />
+            Delete
+          </span>
+        </button>
+      </div>
+      <CodeBlock :code="migrationSnippet" lang="vue" />
+    </div>
 
     <h3>Wrapping multiple icons</h3>
     <p>

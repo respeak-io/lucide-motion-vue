@@ -148,6 +148,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
     :clip="props.clip"
+    :triggerTarget="props.triggerTarget"
   >
     <ArrowUp :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

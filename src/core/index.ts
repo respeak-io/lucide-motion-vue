@@ -7,5 +7,6 @@ export {
   type AnimateIconContext,
   type IconTriggerProps,
   type Trigger,
+  type TriggerTarget,
   type VariantName,
 } from './context'

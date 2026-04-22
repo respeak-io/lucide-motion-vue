@@ -63,6 +63,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
     :clip="props.clip"
+    :triggerTarget="props.triggerTarget"
   >
     <BookmarkPlus :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

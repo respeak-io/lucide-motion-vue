@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { provide, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useInView } from 'motion-v'
-import { AnimateIconKey, type Trigger, type VariantName } from './context'
+import {
+  AnimateIconKey,
+  type Trigger,
+  type TriggerTarget,
+  type VariantName,
+} from './context'
 
 const props = withDefaults(
   defineProps<{
@@ -27,6 +32,12 @@ const props = withDefaults(
      *              Mirrors React's `asChild`.
      */
     as?: 'span' | 'template'
+    /**
+     * Ancestor element to bind hover/tap listeners to instead of the span
+     * wrapper. Lets you drop animation into existing `<button><Icon /></button>`
+     * markup without switching to `as="template"`. Only applies in `as="span"`.
+     */
+    triggerTarget?: TriggerTarget
   }>(),
   {
     animate: false,
@@ -38,6 +49,7 @@ const props = withDefaults(
     initialOnAnimateEnd: false,
     clip: false,
     as: 'span',
+    triggerTarget: 'self',
   },
 )
 
@@ -107,6 +119,50 @@ const on = {
 }
 defineExpose({ on })
 
+// When `triggerTarget !== 'self'`, hand listener duty off to the resolved
+// ancestor element. We must *also* drop them from the span, otherwise moving
+// between button → icon fires both and `start()` re-resets `current` mid-
+// animation.
+const selfListeners = computed(() => (props.triggerTarget === 'self' ? on : {}))
+
+function resolveTarget(): HTMLElement | null {
+  if (typeof window === 'undefined') return null
+  const span = viewRef.value
+  if (!span || props.triggerTarget === 'self') return null
+  if (props.triggerTarget === 'parent') return span.parentElement
+  if (props.triggerTarget.startsWith('closest:')) {
+    const selector = props.triggerTarget.slice('closest:'.length).trim()
+    if (!selector) return null
+    // Start from parentElement so the span itself cannot self-match.
+    return span.parentElement?.closest<HTMLElement>(selector) ?? null
+  }
+  return null
+}
+
+let attached: HTMLElement | null = null
+function detachExternal() {
+  if (!attached) return
+  attached.removeEventListener('mouseenter', onEnter)
+  attached.removeEventListener('mouseleave', onLeave)
+  attached.removeEventListener('pointerdown', onDown)
+  attached.removeEventListener('pointerup', onUp)
+  attached = null
+}
+function attachExternal() {
+  detachExternal()
+  const el = resolveTarget()
+  if (!el) return
+  el.addEventListener('mouseenter', onEnter)
+  el.addEventListener('mouseleave', onLeave)
+  el.addEventListener('pointerdown', onDown)
+  el.addEventListener('pointerup', onUp)
+  attached = el
+}
+
+onMounted(attachExternal)
+onBeforeUnmount(detachExternal)
+watch(() => props.triggerTarget, attachExternal)
+
 // Slot props are optional because the `as="span"` branch emits <slot />
 // without args; consumers using `as="template"` destructure them explicitly.
 defineSlots<{
@@ -140,10 +196,7 @@ defineSlots<{
       lineHeight: 0,
       overflow: clip ? 'hidden' : undefined,
     }"
-    @mouseenter="onEnter"
-    @mouseleave="onLeave"
-    @pointerdown="onDown"
-    @pointerup="onUp"
+    v-on="selfListeners"
   >
     <slot />
   </span>

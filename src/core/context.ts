@@ -41,6 +41,20 @@ export function getVariants<
   return computed(() => animations[animation.value] ?? animations.default)
 }
 
+/**
+ * Which element the hover/tap listeners attach to.
+ *
+ * - `"self"` (default): the icon's own span wrapper — current behaviour.
+ * - `"parent"`: the span's `parentElement`. Covers the common
+ *   `<button><Icon /></button>` shape without restructuring markup.
+ * - `` `closest:${selector}` ``: climb ancestors via `closest()` — use when
+ *   the icon sits inside extra wrappers (e.g. a flex row inside the button).
+ *
+ * Only applies in `as="span"` (default) mode. In `as="template"` mode the
+ * consumer already chooses the trigger element by binding the exposed `on`.
+ */
+export type TriggerTarget = 'self' | 'parent' | `closest:${string}`
+
 export interface IconTriggerProps {
   animate?: Trigger
   animateOnHover?: Trigger
@@ -60,6 +74,7 @@ export interface IconTriggerProps {
    * default, so the caller decides per-use.
    */
   clip?: boolean
+  triggerTarget?: TriggerTarget
 }
 
 export function hasOwnTriggers(p: IconTriggerProps): boolean {

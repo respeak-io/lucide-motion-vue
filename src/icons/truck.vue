@@ -88,6 +88,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
     :clip="props.clip"
+    :triggerTarget="props.triggerTarget"
   >
     <Truck :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

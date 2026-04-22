@@ -60,6 +60,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
     :clip="props.clip"
+    :triggerTarget="props.triggerTarget"
   >
     <BluetoothSearching :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>

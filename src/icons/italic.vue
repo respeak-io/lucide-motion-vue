@@ -55,6 +55,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
     :clip="props.clip"
+    :triggerTarget="props.triggerTarget"
   >
     <Italic :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>
