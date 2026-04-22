@@ -89,15 +89,16 @@ export async function webmToMp4(src, dst, { trimLeadMs = 1000, fps = 30, crf = 2
  * the first frame of the gif is content, not a blank viewport — GitHub uses
  * frame 1 as the social/OG thumbnail.
  */
-export async function webmToGif(src, dst, { trimLeadMs = 1000, fps = 18, width = 800, colors = 128 } = {}) {
+export async function webmToGif(src, dst, { trimLeadMs = 1000, fps = 18, width = 800, colors = 128, crop = null } = {}) {
   const ss = (trimLeadMs / 1000).toFixed(3)
   const vf = [
     `fps=${fps}`,
     `scale=${width}:-1:flags=lanczos`,
+    crop ? `crop=${crop}` : null,
     'split[a][b]',
     `[a]palettegen=max_colors=${colors}:stats_mode=diff[p]`,
     '[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle',
-  ].join(',')
+  ].filter(Boolean).join(',')
   await run('ffmpeg', [
     '-y',
     '-ss', ss,

@@ -105,7 +105,10 @@ async function main() {
   await finalizeWebm(TMP_DIR, webmPath)
 
   const gifPath = join(OUT_DIR, 'hero.gif')
-  await webmToGif(webmPath, gifPath, { trimLeadMs: TRIM_LEAD_MS, fps: 18, width: 800 })
+  // Crop off the empty space below the card row — the viewport is sized
+  // generously for layout stability, but the README banner only wants the
+  // cards themselves.
+  await webmToGif(webmPath, gifPath, { trimLeadMs: TRIM_LEAD_MS, fps: 18, width: 800, crop: '800:200:0:0' })
 
   console.log(`wrote ${webmPath}`)
   console.log(`wrote ${gifPath}`)
