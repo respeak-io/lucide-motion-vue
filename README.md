@@ -118,6 +118,12 @@ Every icon accepts:
 
 Available `animation` names are icon-specific and mirror upstream animate-ui — e.g. `Heart` supports `default` and `fill`, `BetweenVerticalStart` supports `default` and `default-loop`, `Link2` supports `default`/`apart`/`unlink`/`link`. See [Discovering variants](#discovering-variants-iconsmeta) for a programmatic way to list them, or browse the docs site in `docs/` (`pnpm docs:dev`).
 
+<p align="center">
+  <img src="./docs/closeup.gif" alt="Link2 cycling through its five animation variants" width="320" />
+  <br />
+  <sub><code>Link2</code> alone ships five variants — <code>default</code>, <code>apart</code>, <code>unlink</code>, <code>unlink-loop</code>, <code>link</code>.</sub>
+</p>
+
 Icons that are conceptually infinite (`LoaderCircle`, `Loader`, `LoaderPinwheel`, etc.) bake `repeat: Infinity` into their own variant transitions, so they loop as soon as you trigger them — no prop required. One-shot icons play once per trigger.
 
 ## Color

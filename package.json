@@ -53,6 +53,9 @@
     "docs:build": "vite build --config vite.docs.config.ts",
     "docs:preview": "vite preview --config vite.docs.config.ts",
     "docs:hero": "node scripts/record-hero.mjs",
+    "docs:social": "node scripts/record-social.mjs",
+    "docs:closeup": "node scripts/record-closeup.mjs",
+    "docs:captures": "pnpm docs:hero && pnpm docs:social && pnpm docs:closeup",
     "prepublishOnly": "pnpm build"
   },
   "publishConfig": {
