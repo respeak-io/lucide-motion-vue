@@ -167,6 +167,21 @@ function jsxToVueTemplate(jsx) {
   // same JS in both worlds; we only rewrite the attribute wrapper.
   out = out.replace(/style=\{(\{[^}]*\})\}/g, ':style="$1"')
 
+  // motion/react rewrites pixel `transformOrigin` into percentages so it
+  // matches its auto-injected `transform-box: fill-box`. motion-v passes the
+  // pixel value through literally, which makes `12px 12px` resolve against
+  // the element's bbox top-left instead of the SVG viewport — shifting the
+  // rotation/scale pivot. Pin transform-box to view-box so pixel origins are
+  // interpreted in SVG user coordinates, matching the upstream intent.
+  // Only applied when transformOrigin is a pixel value and transformBox is
+  // not already set (percentages and keywords continue to use fill-box).
+  out = out.replace(/:style="(\{[^"}]*\})"/g, (match, obj) => {
+    if (!/transformOrigin:\s*'[^']*px[^']*'/.test(obj)) return match
+    if (/transformBox\s*:/.test(obj)) return match
+    const patched = obj.replace(/\s*\}$/, ", transformBox: 'view-box' }")
+    return `:style="${patched}"`
+  })
+
   // className={cn(..., className)} — the upstream uses a `cn` helper + a
   // forwarded `className` prop that we don't wire in the port. Strip the
   // whole attribute; consumers can pass classes via normal attrs fallthrough.
