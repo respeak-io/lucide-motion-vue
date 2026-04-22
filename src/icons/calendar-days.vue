@@ -85,21 +85,19 @@ const selfWrap = computed(() => hasOwnTriggers(props))
         <path d="M16 2v4" />
         <rect height="18" rx="2" width="18" x="3" y="4" />
         <path d="M3 10h18" />
-        <AnimatePresence>
-          <motion.circle
-      v-for="(dot, index) in DOTS"
-      :key="`${dot.cx}-${dot.cy}`"
-              :animate="current"
-      @animationComplete="notifyComplete"
-              :custom="index"
-              :cx="dot.cx"
-              :cy="dot.cy"
-              fill="currentColor"
-              initial="initial"
-              r="1"
-              stroke="none"
-              :variants="variants.variants"
-            />
-        </AnimatePresence>
+        <motion.circle
+          v-for="(dot, index) in DOTS"
+          :key="`${dot.cx}-${dot.cy}`"
+          :animate="current"
+          @animationComplete="notifyComplete"
+          :custom="index"
+          :cx="dot.cx"
+          :cy="dot.cy"
+          fill="currentColor"
+          initial="initial"
+          r="1"
+          stroke="none"
+          :variants="variants.variants"
+        />
       </motion.svg>
 </template>
