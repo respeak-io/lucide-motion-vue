@@ -50,6 +50,13 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    group: {
+            initial: { scale: 1 },
+            animate: { scale: [1, 1.08, 1] },
+    },
+    path: {},
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

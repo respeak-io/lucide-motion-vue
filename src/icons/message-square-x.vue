@@ -59,6 +59,44 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    group: {},
+    path1: {
+  initial: {
+    pathLength: 1,
+    opacity: 1,
+    transition: {
+      duration: 0.3,
+    },
+  },
+  animate: {
+    pathLength: [0, 1],
+    opacity: [0, 1],
+    transition: {
+      pathLength: { duration: 0.4, ease: "easeInOut" },
+      opacity: { duration: 0.4, ease: "easeInOut" },
+    },
+  },
+    },
+    path2: {
+  initial: {
+    pathLength: 1,
+    opacity: 1,
+    transition: {
+      duration: 0.3,
+    },
+  },
+  animate: {
+    pathLength: [0, 1],
+    opacity: [0, 1],
+    transition: {
+      pathLength: { duration: 0.4, ease: "easeInOut", delay: 0.2 },
+      opacity: { duration: 0.4, ease: "easeInOut", delay: 0.2 },
+    },
+  },
+    },
+    path3: {},
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

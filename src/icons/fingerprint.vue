@@ -87,6 +87,127 @@ const animations = {
     });
     return variants;
   })() satisfies Record<string, Variants>,
+  'lucide-animated': {
+    group: {},
+    path: {
+  initial: { pathLength: 1, opacity: 1 },
+  animate: {
+    opacity: [0, 0, 1, 1, 1],
+    pathLength: [0.1, 0.3, 0.5, 0.7, 0.9, 1],
+    transition: {
+      opacity: { duration: 0.5 },
+      pathLength: {
+        duration: 2,
+      },
+    },
+  },
+    },
+    path1: {
+  initial: { pathLength: 1, opacity: 1 },
+  animate: {
+    opacity: [0, 0, 1, 1, 1],
+    pathLength: [0.1, 0.3, 0.5, 0.7, 0.9, 1],
+    transition: {
+      opacity: { duration: 0.5 },
+      pathLength: {
+        duration: 2,
+      },
+    },
+  },
+    },
+    path2: {
+  initial: { pathLength: 1, opacity: 1 },
+  animate: {
+    opacity: [0, 0, 1, 1, 1],
+    pathLength: [0.1, 0.3, 0.5, 0.7, 0.9, 1],
+    transition: {
+      opacity: { duration: 0.5 },
+      pathLength: {
+        duration: 2,
+      },
+    },
+  },
+    },
+    path3: {
+  initial: { pathLength: 1, opacity: 1 },
+  animate: {
+    opacity: [0, 0, 1, 1, 1],
+    pathLength: [0.1, 0.3, 0.5, 0.7, 0.9, 1],
+    transition: {
+      opacity: { duration: 0.5 },
+      pathLength: {
+        duration: 2,
+      },
+    },
+  },
+    },
+    path4: {
+  initial: { pathLength: 1, opacity: 1 },
+  animate: {
+    opacity: [0, 0, 1, 1, 1],
+    pathLength: [0.1, 0.3, 0.5, 0.7, 0.9, 1],
+    transition: {
+      opacity: { duration: 0.5 },
+      pathLength: {
+        duration: 2,
+      },
+    },
+  },
+    },
+    path5: {
+  initial: { pathLength: 1, opacity: 1 },
+  animate: {
+    opacity: [0, 0, 1, 1, 1],
+    pathLength: [0.1, 0.3, 0.5, 0.7, 0.9, 1],
+    transition: {
+      opacity: { duration: 0.5 },
+      pathLength: {
+        duration: 2,
+      },
+    },
+  },
+    },
+    path6: {
+  initial: { pathLength: 1, opacity: 1 },
+  animate: {
+    opacity: [0, 0, 1, 1, 1],
+    pathLength: [0.1, 0.3, 0.5, 0.7, 0.9, 1],
+    transition: {
+      opacity: { duration: 0.5 },
+      pathLength: {
+        duration: 2,
+      },
+    },
+  },
+    },
+    path7: {
+  initial: { pathLength: 1, opacity: 1 },
+  animate: {
+    opacity: [0, 0, 1, 1, 1],
+    pathLength: [0.1, 0.3, 0.5, 0.7, 0.9, 1],
+    transition: {
+      opacity: { duration: 0.5 },
+      pathLength: {
+        duration: 2,
+      },
+    },
+  },
+    },
+    path8: {
+  initial: { pathLength: 1, opacity: 1 },
+  animate: {
+    opacity: [0, 0, 1, 1, 1],
+    pathLength: [0.1, 0.3, 0.5, 0.7, 0.9, 1],
+    transition: {
+      opacity: { duration: 0.5 },
+      pathLength: {
+        duration: 2,
+      },
+    },
+  },
+    },
+    path9: {},
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

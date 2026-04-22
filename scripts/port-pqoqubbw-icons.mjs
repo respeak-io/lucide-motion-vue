@@ -581,8 +581,11 @@ function jsxToVueTemplate(jsx, variantRefs) {
   return out
 }
 
-/** Emit the full SFC string. */
-function emitSfc({ pascal, svgTemplate, animationsSrc, auxConsts }) {
+/** Emit the full SFC string. `upstreamKebab` is recorded in a machine-
+ * readable header comment so re-runs can tell which upstream each
+ * pqoqubbw-sourced SFC (and each numbered sibling) was derived from,
+ * and skip writing a duplicate. */
+function emitSfc({ pascal, svgTemplate, animationsSrc, auxConsts, upstreamKebab }) {
   const prelude = auxConsts.length ? `\n${auxConsts.map(c => c.decl).join('\n\n')}\n` : ''
   // Include Transition only when an aux const uses it; keeps unused-import
   // warnings off the vast majority of icons that don't need it.
@@ -602,6 +605,7 @@ function emitSfc({ pascal, svgTemplate, animationsSrc, auxConsts }) {
 
   return `<script setup lang="ts">
 // Auto-generated from pqoqubbw/icons by scripts/port-pqoqubbw-icons.mjs.
+// Upstream source: ${upstreamKebab}
 // Variants and SVG geometry adapted from https://github.com/pqoqubbw/icons (MIT).
 // Surfaced in the docs as "lucide-animated" (https://lucide-animated.com).
 // Adaptation: \`normal\` → \`initial\`; React forwardRef/useAnimation/mouse
@@ -638,6 +642,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
   >
     <${pascal} :size="props.size" :strokeWidth="props.strokeWidth" />
   </AnimateIcon>
@@ -664,9 +669,19 @@ function addVElse(svgJsx, kind) {
     .replace(/<\/svg>$/, '</motion.svg>')
 }
 
-function portOne(kebab) {
-  const pascal = kebabToPascal(kebab)
-  const srcPath = join(UPSTREAM_DIR, 'icons', `${kebab}.tsx`)
+/**
+ * Port a single upstream pqoqubbw icon.
+ *   - `upstreamKebab`: the file name we look up in the upstream clone.
+ *   - `outKebab`:      the file name we write under (defaults to upstreamKebab).
+ *     Pass a different `outKebab` when writing a numbered sibling — e.g.
+ *     port upstream `send.tsx` out as our `send-2.vue` / `Send2` component
+ *     because upstream's geometry doesn't structurally align with our
+ *     existing `send.vue` and augment fell through.
+ */
+function portOne(upstreamKebab, outKebab = upstreamKebab) {
+  const kebab = outKebab
+  const pascal = kebabToPascal(outKebab)
+  const srcPath = join(UPSTREAM_DIR, 'icons', `${upstreamKebab}.tsx`)
   if (!existsSync(srcPath)) throw new Error('no upstream file')
   const src = readFileSync(srcPath, 'utf8')
 
@@ -779,7 +794,7 @@ ${partsSrc}
   } satisfies Record<string, Variants>,
 }`
 
-  const sfc = emitSfc({ pascal, svgTemplate: tpl, animationsSrc, auxConsts })
+  const sfc = emitSfc({ pascal, svgTemplate: tpl, animationsSrc, auxConsts, upstreamKebab })
 
   const outPath = join(OUT_DIR, `${kebab}.vue`)
   if (existsSync(outPath)) {
@@ -824,6 +839,13 @@ function updateMeta(written) {
       anims: [{ name: 'default', source: 'lucide-animated' }],
     })
   }
+  writeMetaRows(rows)
+}
+
+/** Serialize a rows map back to icons-meta.ts. Kept separate from
+ * updateMeta because augment needs to mutate a specific row without going
+ * through "add missing rows" logic. */
+function writeMetaRows(rows) {
   const entries = [...rows.values()]
     .sort((a, b) => a.kebab.localeCompare(b.kebab))
     .map(r => {
@@ -916,46 +938,68 @@ ${body}
  */
 
 /**
- * Read the hand-written SFC for `kebab` and return:
- *   - pathKeyToD: Map<pathKey, d-attribute> extracted from <motion.path>s
- *   - groupKey:   name bound to the first non-path motion container, or null
- *   - existingVariants: Set<string> of top-level keys in `const animations = {}`
- *   - path:       absolute path to the SFC (for log messages)
- * Throws if the file is missing or lacks the hand-written/ported sentinel.
+ * Read the existing SFC for `kebab` and return the shape we need to augment
+ * it with a new variant. Accepts three SFC lineages:
+ *   - 'Hand-written' / 'Hand-ported' (user-authored)
+ *   - 'Auto-generated from animate-ui' (port-icons.mjs output)
+ * Rejects 'Auto-generated from pqoqubbw' — those are already lucide-animated
+ * and augment would be a no-op. Missing/unknown sentinels also reject; a
+ * file with no recognisable origin isn't safe to splice into blindly.
+ *
+ * Returns:
+ *   - handParts:  doc-ordered [{ tag, partKey, d | null }] for every
+ *                 <motion.X :variants="variants.Y"> — lets the augment
+ *                 pair with upstream parts by position, not geometry.
+ *   - pathKeyToD, groupKey: preserved for legacy/debug paths.
+ *   - existingVariants: Set<string> of top-level keys in `const animations`.
+ *   - src:        full file contents (augment write-back path splices here).
+ *   - path:       absolute path for log messages.
  */
 function readHandWritten(kebab) {
   const outPath = join(OUT_DIR, `${kebab}.vue`)
   if (!existsSync(outPath)) throw new Error(`no existing SFC at ${outPath}`)
   const src = readFileSync(outPath, 'utf8')
-  if (!src.includes('Hand-written') && !src.includes('Hand-ported')) {
-    throw new Error(`${outPath} is not marked Hand-written/Hand-ported — augment only operates on hand-authored icons`)
+  if (src.includes('Auto-generated from pqoqubbw')) {
+    throw Object.assign(
+      new Error(`${outPath} is already a pqoqubbw auto-port — skip`),
+      { alreadyLucide: true },
+    )
+  }
+  const hasSentinel =
+    src.includes('Hand-written') ||
+    src.includes('Hand-ported') ||
+    src.includes('Auto-generated from animate-ui')
+  if (!hasSentinel) {
+    throw new Error(`${outPath} has no recognised source sentinel — refusing to augment`)
   }
 
   const tplStart = src.indexOf('<template>')
   const tplEnd = src.indexOf('</template>')
-  if (tplStart < 0 || tplEnd < 0) throw new Error('no <template> block in hand-written SFC')
+  if (tplStart < 0 || tplEnd < 0) throw new Error('no <template> block in existing SFC')
   const tpl = src.slice(tplStart, tplEnd)
 
+  // Single pass over every motion.X element in the template, in document
+  // order. Capture its tag, the partKey it binds to (if any), and — for
+  // <motion.path> — its `d` attribute so we can detect geometry drift later.
+  // The regex matches both self-closing (<motion.path .../>) and open
+  // (<motion.g ...>) forms; we only care about the opening tag so it's fine
+  // to stop at the first `>` or `/>`.
+  const handParts = []
   const pathKeyToD = new Map()
-  // Self-closing motion.path tags (hand-written icons don't nest children
-  // inside motion.path, so self-close is safe to assume).
-  for (const m of tpl.matchAll(/<motion\.path\b([\s\S]*?)\/>/g)) {
-    const attrs = m[1]
-    const dMatch = attrs.match(/\bd="([^"]+)"/)
-    const varMatch = attrs.match(/:variants="variants\.([A-Za-z0-9_]+)"/)
-    if (!dMatch || !varMatch) continue
-    pathKeyToD.set(varMatch[1], dMatch[1].trim())
-  }
-  if (pathKeyToD.size === 0) throw new Error('no <motion.path> with :variants binding found in hand-written template')
-
-  // Container key: first non-path motion element that binds :variants. Rocket
-  // binds it on <motion.g>; other hand-writtens might bind on <motion.svg>.
   let groupKey = null
-  for (const m of tpl.matchAll(/<motion\.([a-z]+)\b([\s\S]*?)>/g)) {
-    if (m[1] === 'path') continue
-    const varMatch = m[2].match(/:variants="variants\.([A-Za-z0-9_]+)"/)
-    if (varMatch) { groupKey = varMatch[1]; break }
+  for (const m of tpl.matchAll(/<motion\.([a-z]+)\b([\s\S]*?)(?:\/>|>)/g)) {
+    const tag = m[1]
+    const attrs = m[2]
+    const varMatch = attrs.match(/:variants="variants\.([A-Za-z0-9_]+)"/)
+    if (!varMatch) continue
+    const partKey = varMatch[1]
+    const dMatch = attrs.match(/\bd="([^"]+)"/)
+    const d = dMatch ? dMatch[1].trim() : null
+    handParts.push({ tag, partKey, d })
+    if (tag === 'path' && d) pathKeyToD.set(partKey, d)
+    if (tag !== 'path' && !groupKey) groupKey = partKey
   }
+  if (handParts.length === 0) throw new Error('no <motion.X :variants="..."> found in existing template')
 
   const animIdx = src.indexOf('const animations = {')
   if (animIdx < 0) throw new Error('no `const animations = {` in hand-written SFC')
@@ -992,15 +1036,19 @@ function readHandWritten(kebab) {
     }
   }
 
-  return { pathKeyToD, groupKey, existingVariants, path: outPath }
+  return { handParts, pathKeyToD, groupKey, existingVariants, src, path: outPath }
 }
 
 /**
  * Parse `<kebab>.tsx` from the upstream clone and return the shape we need
- * to remap it onto a hand-written SFC:
- *   - svgPart: partName bound to <motion.svg variants={...}> (or null)
- *   - pathToVariant: [{ d, partName }, ...] one per animated <motion.path>
- *   - partBodies: Map<partName, variantBody>  (already normal→initial renamed)
+ * to remap it onto an existing SFC:
+ *   - orderedParts: doc-order [{ tag, partName, d | null }] for every
+ *                   <motion.X> that binds a `variants={...}` — covers
+ *                   motion.svg, motion.g (pqoqubbw's send lifts the whole
+ *                   group), motion.path, etc. This is what the positional
+ *                   pairing in augmentOne consumes.
+ *   - partBodies:   Map<partName, variantBody>, already normal→initial
+ *                   renamed, ready to splice.
  * Bails out on the same upstream shapes portOne does — sequenced icons,
  * multi-controls icons, non-{normal,animate} variant states.
  */
@@ -1045,92 +1093,241 @@ function upstreamVariantShape(kebab) {
     return match[2]
   }
 
-  let svgPart = null
-  const svgTag = preJsx.match(/<motion\.svg\b([^>]*)>/)
-  if (svgTag) {
-    const v = svgTag[1].match(variantRe)
-    if (v) svgPart = resolvePart(v)
-  }
-
-  const pathToVariant = []
-  // Match self-closing <motion.path ... />; upstream pqoqubbw always self-closes.
-  for (const m of preJsx.matchAll(/<motion\.path\b([\s\S]*?)\/>/g)) {
-    const attrs = m[1]
-    const dMatch = attrs.match(/\bd="([^"]+)"/)
+  // Doc-ordered sweep across every motion.X with a variants binding.
+  // Matches both self-closing (`<motion.path ... />`) and open
+  // (`<motion.g ...>`) forms — we only care about the opening tag here.
+  const orderedParts = []
+  for (const m of preJsx.matchAll(/<motion\.([a-z]+)\b([\s\S]*?)(?:\/>|>)/g)) {
+    const tag = m[1]
+    const attrs = m[2]
     const v = attrs.match(variantRe)
-    if (!dMatch || !v) continue
-    pathToVariant.push({ d: dMatch[1].trim(), partName: resolvePart(v) })
+    if (!v) continue
+    const partName = resolvePart(v)
+    const dMatch = attrs.match(/\bd="([^"]+)"/)
+    orderedParts.push({ tag, partName, d: dMatch ? dMatch[1].trim() : null })
   }
 
-  return { svgPart, pathToVariant, partBodies }
+  return { orderedParts, partBodies }
+}
+
+/** Treat svg/g as interchangeable "container" tags when checking structural
+ * alignment. The hand-written rocket uses <motion.g :variants="group">;
+ * other icons bind the same kind of motion on <motion.svg>. For pairing
+ * purposes they play the same role. */
+function tagsCompatible(a, b) {
+  if (a === b) return true
+  const container = new Set(['svg', 'g'])
+  return container.has(a) && container.has(b)
+}
+
+/** Compare two SVG `d` strings by their first N non-whitespace characters.
+ * Used for the geometry-drift notice — not an exact check, just a sniff for
+ * "these are probably the same shape". */
+function dPrefixMatches(a, b, n = 12) {
+  const norm = s => s.replace(/\s+/g, '')
+  return norm(a).slice(0, n) === norm(b).slice(0, n)
+}
+
+/** Splice a new top-level variant (rendered block) into the existing
+ * `const animations = { ... }` block, just before the outer closing brace.
+ * The caller supplies the fully-rendered variant block including the
+ * trailing comma; we take care of indentation + placement. */
+function spliceVariantIntoSfc(src, variantBlock) {
+  const animIdx = src.indexOf('const animations = {')
+  if (animIdx < 0) throw new Error('no `const animations = {` block in SFC')
+  const braceIdx = src.indexOf('{', animIdx)
+  const { end } = extractBalanced(src, braceIdx)
+  // `end` sits one past the outer closing `}`. Insert the rendered block
+  // just before that `}`, preserving the existing formatting.
+  const insertAt = end - 1
+  return src.slice(0, insertAt) + `  ${variantBlock}\n` + src.slice(insertAt)
+}
+
+/** Append a new animation entry to an existing row in icons-meta.ts.
+ * Idempotent: no-op if the row already lists an animation with the same
+ * `name`. Throws if the row is missing — we don't silently create rows for
+ * augment (callers should have ensured the row exists). */
+function appendMetaAnim(kebab, anim) {
+  const rows = readAllRows()
+  const row = rows.get(kebab)
+  if (!row) throw new Error(`icons-meta.ts has no row for '${kebab}' — can't append animation`)
+  if (row.anims.some(a => a.name === anim.name)) return false
+  row.anims.push(anim)
+  writeMetaRows(rows)
+  return true
 }
 
 /**
- * Find the hand-written path key whose `d` corresponds to the given upstream
- * `d`. Tries exact match first, then falls back to matching the first 12
- * characters (the move-to + first curve command) — hand-written geometry
- * sometimes has small decimal tweaks that differ from upstream. Throws on
- * ambiguous matches; returns null if nothing matches.
+ * Augment mode. Pairs upstream parts to the existing SFC's parts positionally
+ * (in document order) rather than by geometry — variants are just motion
+ * specs, so a lucide-animated variant can legitimately drive animate-ui
+ * geometry. Two failure modes matter:
+ *   - `alreadyHasVariant`: the SFC already has a variant with this name.
+ *     Skippable.
+ *   - `structuralMismatch`: upstream has a different count or tag sequence
+ *     (e.g. pqoqubbw's send has a 3rd <motion.path> swoosh that doesn't
+ *     exist in the animate-ui geometry). Caller falls back to a numbered
+ *     sibling icon — see processOne.
+ * `driftNotes` are geometry divergences (same tag and position, but `d`
+ * prefixes differ) that don't block augment but are worth reviewing.
+ * `mode: 'print'` keeps the original CLI behaviour of emitting a
+ * paste-ready snippet; `mode: 'write'` splices into the SFC and updates
+ * icons-meta in place.
  */
-function matchHandWrittenPath(d, pathKeyToD) {
-  const norm = s => s.replace(/\s+/g, ' ').trim()
-  const wanted = norm(d)
-  for (const [key, dh] of pathKeyToD) {
-    if (norm(dh) === wanted) return key
-  }
-  const head = wanted.slice(0, 12)
-  const cands = [...pathKeyToD.entries()].filter(([, dh]) => norm(dh).slice(0, 12) === head)
-  if (cands.length === 1) return cands[0][0]
-  if (cands.length > 1) {
-    throw new Error(`ambiguous d-prefix match for upstream "${wanted.slice(0, 40)}..." → ${cands.map(c => c[0]).join(', ')}`)
-  }
-  return null
-}
-
-function augmentOne(kebab, variantName) {
+function augmentOne(kebab, variantName, { mode = 'print' } = {}) {
   const hand = readHandWritten(kebab)
   if (hand.existingVariants.has(variantName)) {
-    throw new Error(`variant '${variantName}' already exists in ${hand.path} — pick a different --variant-name`)
+    throw Object.assign(
+      new Error(`variant '${variantName}' already exists in ${hand.path}`),
+      { alreadyHasVariant: true },
+    )
   }
 
   const up = upstreamVariantShape(kebab)
 
+  // Split into containers (non-path motion elements — the animate-ui port
+  // almost always wraps its shapes in <motion.g :variants="group"> even
+  // when pqoqubbw has no equivalent wrapper) and paths. Pair each bucket
+  // positionally: container ↔ container, path ↔ path. This lets icons
+  // whose only "difference" is a decorative <motion.g> still merge as a
+  // variant instead of being siblingised.
+  const splitParts = arr => {
+    const containers = [], paths = []
+    for (const p of arr) (p.tag === 'path' ? paths : containers).push(p)
+    return { containers, paths }
+  }
+  const handSplit = splitParts(hand.handParts)
+  const upSplit = splitParts(up.orderedParts)
+
+  // Path count must match exactly — upstream having extra paths means new
+  // shapes we can't render against our template; fewer upstream paths means
+  // hand has geometry upstream doesn't try to animate, which is fine
+  // (unpaired hand paths just get an empty `{}` filler).
+  if (upSplit.paths.length > handSplit.paths.length) {
+    throw Object.assign(
+      new Error(`upstream has ${upSplit.paths.length} paths, existing has only ${handSplit.paths.length}`),
+      { structuralMismatch: true },
+    )
+  }
+  // Upstream extra containers = upstream motion we have no slot for
+  // (upstream binds variants on an extra motion.g/motion.svg that our
+  // template lacks). Refuse rather than silently drop that motion.
+  if (upSplit.containers.length > handSplit.containers.length) {
+    throw Object.assign(
+      new Error(`upstream has ${upSplit.containers.length} container-level variants, existing has only ${handSplit.containers.length}`),
+      { structuralMismatch: true },
+    )
+  }
+
+  // Shape-correspondence check: when upstream has strictly fewer paths
+  // than hand, those upstream paths should still correspond to some hand
+  // path — otherwise upstream is animating a different shape entirely
+  // (pqoqubbw's send has a single "dashed swoosh trail" motion.path that
+  // doesn't correspond to either of animate-ui's send-body paths). In
+  // that case positional pairing would apply swoosh-motion to the send
+  // body and the result looks wrong. Require every upstream path to
+  // d-prefix-match SOME hand path; otherwise fall through to sibling.
+  // Equal-count path pairs skip this check — drift across equally-populated
+  // sides is common (shrink's paths are reordered; check's move-to uses
+  // lowercase `m` vs uppercase `M`) but the correspondence is still there.
+  if (upSplit.paths.length > 0 && upSplit.paths.length < handSplit.paths.length) {
+    const normD12 = d => d.replace(/\s+/g, '').slice(0, 12)
+    const handPrefixes = new Set(handSplit.paths.filter(p => p.d).map(p => normD12(p.d)))
+    for (const u of upSplit.paths) {
+      if (!u.d) continue
+      if (!handPrefixes.has(normD12(u.d))) {
+        throw Object.assign(
+          new Error(`upstream path d="${u.d.slice(0, 32)}..." doesn't correspond to any existing path — likely a different shape`),
+          { structuralMismatch: true },
+        )
+      }
+    }
+  }
+
   const assigned = new Map()
-  if (up.svgPart) {
-    if (!hand.groupKey) {
-      throw new Error(`upstream binds variants on <motion.svg> (part '${up.svgPart}') but hand-written file has no non-path motion container with :variants — add one or skip augment`)
+  const driftNotes = []
+
+  /** Pair one hand element to one upstream element: validate tag
+   * compatibility, record drift for path-type elements, and assign the
+   * upstream body to the hand partKey — with the same dedupe rule as
+   * before for templates that reuse a partKey across siblings (wind). */
+  const pair = (h, u, posLabel) => {
+    if (!tagsCompatible(h.tag, u.tag)) {
+      throw Object.assign(
+        new Error(`tag mismatch at ${posLabel}: existing=<motion.${h.tag}> upstream=<motion.${u.tag}>`),
+        { structuralMismatch: true },
+      )
     }
-    assigned.set(hand.groupKey, up.partBodies.get(up.svgPart))
-  }
-  for (const { d, partName } of up.pathToVariant) {
-    const targetKey = matchHandWrittenPath(d, hand.pathKeyToD)
-    if (!targetKey) {
-      throw new Error(`no hand-written <motion.path> matches upstream d="${d.slice(0, 40)}..." (part '${partName}')`)
+    if (h.tag === 'path' && h.d && u.d && !dPrefixMatches(h.d, u.d)) {
+      driftNotes.push({ partKey: h.partKey, existingD: h.d.slice(0, 60), upstreamD: u.d.slice(0, 60) })
     }
-    if (assigned.has(targetKey)) {
-      throw new Error(`two upstream parts mapped to hand-written key '${targetKey}' — geometry is ambiguous`)
+    const newBody = up.partBodies.get(u.partName)
+    if (assigned.has(h.partKey)) {
+      if (assigned.get(h.partKey) !== newBody) {
+        throw Object.assign(
+          new Error(`partKey '${h.partKey}' reused at ${posLabel} but upstream body differs`),
+          { structuralMismatch: true },
+        )
+      }
+      return
     }
-    assigned.set(targetKey, up.partBodies.get(partName))
+    assigned.set(h.partKey, newBody)
   }
 
-  // Emit ALL hand-written keys (group + every pathN) so the snippet slots
-  // cleanly into the existing `getVariants(animations)` shape. Keys the
-  // upstream doesn't animate get `{}`.
-  const allKeys = [hand.groupKey, ...hand.pathKeyToD.keys()].filter(Boolean)
-  const lines = allKeys.map(k => {
-    const body = assigned.get(k)
-    return body ? `    ${k}: {${body.trimEnd()}\n    },` : `    ${k}: {},`
-  })
+  for (let i = 0; i < upSplit.containers.length; i++) {
+    pair(handSplit.containers[i], upSplit.containers[i], `container[${i}]`)
+  }
+  for (let i = 0; i < upSplit.paths.length; i++) {
+    pair(handSplit.paths[i], upSplit.paths[i], `path[${i}]`)
+  }
+  // Unpaired hand parts (extra containers or extra paths) stay out of
+  // `assigned` — the renderer below will emit them as `{}` fillers.
 
-  const snippet = `  '${variantName}': {
+  // Render the new variant block. Emit each distinct partKey exactly once
+  // (hand templates like wind bind `variants.path` on several elements —
+  // the variant body is shared, so the object literal needs only one key).
+  // Any key upstream doesn't animate gets an empty `{}` so getVariants still
+  // finds a body.
+  const seenKeys = new Set()
+  const lines = []
+  for (const h of hand.handParts) {
+    if (seenKeys.has(h.partKey)) continue
+    seenKeys.add(h.partKey)
+    const body = assigned.get(h.partKey)
+    lines.push(body
+      ? `    ${h.partKey}: {${body.trimEnd()}\n    },`
+      : `    ${h.partKey}: {},`)
+  }
+  const variantBlock = `'${variantName}': {
 ${lines.join('\n')}
   } satisfies Record<string, Variants>,`
 
-  console.log(`\n# Paste inside \`const animations = { ... }\` in ${hand.path.replace(ROOT + '/', '')}:\n`)
-  console.log(snippet)
-  console.log(`\n# Append to the '${kebab}' row's animations array in src/icons-meta.ts:\n`)
-  console.log(`    { name: '${variantName}', source: 'lucide-animated' }`)
-  console.log()
+  if (mode === 'print') {
+    console.log(`\n# Paste inside \`const animations = { ... }\` in ${hand.path.replace(ROOT + '/', '')}:\n`)
+    console.log('  ' + variantBlock)
+    console.log(`\n# Append to the '${kebab}' row's animations array in src/icons-meta.ts:\n`)
+    console.log(`    { name: '${variantName}', source: 'lucide-animated' }`)
+    console.log()
+    return { driftNotes }
+  }
+
+  // Write-in-place: splice into the SFC and idempotently append the meta row.
+  const newSrc = spliceVariantIntoSfc(hand.src, variantBlock)
+  writeFileSync(hand.path, newSrc)
+  appendMetaAnim(kebab, { name: variantName, source: 'lucide-animated' })
+  return { driftNotes }
+}
+
+/** Pick the lowest free `<base>-<n>` (n>=2) not already present in
+ * `takenKebabs`. Used when an upstream icon's shape doesn't structurally
+ * align with the existing SFC — we create a numbered sibling icon instead
+ * of forcing an incompatible augment. */
+function pickSiblingKebab(base, takenKebabs) {
+  for (let n = 2; n < 100; n++) {
+    const candidate = `${base}-${n}`
+    if (!takenKebabs.has(candidate)) return candidate
+  }
+  throw new Error(`no free numbered-sibling slot under ${base}-2..99`)
 }
 
 // --- main ---
@@ -1154,29 +1351,163 @@ const dirs = readdirSync(join(UPSTREAM_DIR, 'icons'))
   .sort()
   .slice(0, limit)
 
-const results = { written: 0, 'skipped-exists': 0, failed: [] }
-const written = []
+/**
+ * Dispatch one upstream icon: fresh port, augment onto an existing SFC, or
+ * fall through to a numbered sibling when the structure doesn't align.
+ *
+ * Semantics:
+ *   - No existing SFC → fresh port via portOne. The icon's row is created
+ *     by updateMeta() at the end of the run.
+ *   - Existing SFC is a prior pqoqubbw auto-port → skip; it's already the
+ *     lucide-animated flavour.
+ *   - Existing SFC is hand-written / hand-ported / animate-ui auto-port →
+ *     try augment(mode='write'). On structural mismatch (element count or
+ *     tag sequence diverges — see send's extra swoosh <motion.path>), fall
+ *     through to writing `<base>-<n>.vue` as a fresh pqoqubbw port. The
+ *     numbered sibling gets its own `lucide-animated` default-animation
+ *     row in icons-meta; original icon is untouched.
+ *
+ * `takenKebabs` is mutated as we claim sibling slots, so the caller can
+ * run processOne in a loop without pre-reserving anything.
+ */
+function processOne(upstreamKebab, { takenKebabs, upstreamToSiblings }) {
+  const outPath = join(OUT_DIR, `${upstreamKebab}.vue`)
+  if (!existsSync(outPath)) {
+    const r = portOne(upstreamKebab)
+    return { kind: 'fresh', row: r }
+  }
+  const existing = readFileSync(outPath, 'utf8')
+  if (existing.includes('Auto-generated from pqoqubbw')) {
+    return { kind: 'skipped-existing-pqoqubbw' }
+  }
+  try {
+    const { driftNotes } = augmentOne(upstreamKebab, 'lucide-animated', { mode: 'write' })
+    return { kind: 'augmented', driftNotes }
+  } catch (e) {
+    if (e.alreadyHasVariant) {
+      // Self-heal: if the SFC has the variant but icons-meta.ts doesn't
+      // list it (e.g. meta was reset out of sync with the SFC), re-add
+      // the row. appendMetaAnim is idempotent.
+      try { appendMetaAnim(upstreamKebab, { name: 'lucide-animated', source: 'lucide-animated' }) }
+      catch {}
+      return { kind: 'skipped-has-lucide' }
+    }
+    if (!e.structuralMismatch) throw e
+    // Structural mismatch → write a numbered sibling. Idempotency: if a
+    // sibling SFC for this upstream already exists (detected via the
+    // `// Upstream source: X` header), don't write another one.
+    const existingSiblings = upstreamToSiblings.get(upstreamKebab)
+    if (existingSiblings && existingSiblings.size > 0) {
+      return { kind: 'skipped-existing-sibling' }
+    }
+    const sibKebab = pickSiblingKebab(upstreamKebab, takenKebabs)
+    takenKebabs.add(sibKebab)
+    const r = portOne(upstreamKebab, sibKebab)
+    // Record the new sibling so subsequent iterations in this run don't
+    // re-pick a clashing slot.
+    if (!upstreamToSiblings.has(upstreamKebab)) upstreamToSiblings.set(upstreamKebab, new Set())
+    upstreamToSiblings.get(upstreamKebab).add(sibKebab)
+    return { kind: 'sibling', row: r, reason: e.message }
+  }
+}
+
+/** Scan OUT_DIR for pqoqubbw-sourced SFCs and extract their `// Upstream
+ * source: <kebab>` header. Returns a map from upstream kebab to the set
+ * of local kebabs that port it (usually one: the upstream-name-matching
+ * SFC or a numbered sibling). Used to make sibling creation idempotent
+ * across re-runs. */
+function scanExistingSiblings() {
+  const map = new Map()
+  if (!existsSync(OUT_DIR)) return map
+  for (const f of readdirSync(OUT_DIR)) {
+    if (!f.endsWith('.vue')) continue
+    const outKebab = f.replace(/\.vue$/, '')
+    const head = readFileSync(join(OUT_DIR, f), 'utf8').slice(0, 500)
+    if (!head.includes('Auto-generated from pqoqubbw')) continue
+    const m = head.match(/\/\/ Upstream source:\s*([a-z0-9-]+)/)
+    if (!m) continue
+    const upstreamKebab = m[1]
+    if (!map.has(upstreamKebab)) map.set(upstreamKebab, new Set())
+    map.get(upstreamKebab).add(outKebab)
+  }
+  return map
+}
+
+const takenKebabs = new Set([
+  ...dirs,
+  ...readdirSync(OUT_DIR).filter(f => f.endsWith('.vue')).map(f => f.replace(/\.vue$/, '')),
+])
+const upstreamToSiblings = scanExistingSiblings()
+
+const results = {
+  written: 0,
+  augmented: 0,
+  sibling: 0,
+  'skipped-existing-pqoqubbw': 0,
+  'skipped-has-lucide': 0,
+  'skipped-existing-sibling': 0,
+  failed: [],
+  drift: [],
+  siblingReasons: [],
+}
+const freshRows = []
 for (const kebab of dirs) {
   try {
-    const r = portOne(kebab)
-    results[r.status] = (results[r.status] || 0) + 1
-    if (r.status === 'written') written.push(r)
+    const r = processOne(kebab, { takenKebabs, upstreamToSiblings })
+    if (r.kind === 'fresh') {
+      results.written++
+      freshRows.push(r.row)
+    } else if (r.kind === 'augmented') {
+      results.augmented++
+      if (r.driftNotes?.length) {
+        for (const d of r.driftNotes) results.drift.push({ kebab, ...d })
+      }
+    } else if (r.kind === 'sibling') {
+      results.sibling++
+      freshRows.push(r.row)
+      results.siblingReasons.push({ from: kebab, to: r.row.kebab, reason: r.reason })
+    } else {
+      results[r.kind] = (results[r.kind] || 0) + 1
+    }
   } catch (e) {
     results.failed.push({ kebab, reason: e.message })
   }
 }
 
-if (written.length) {
-  updateMeta(written)
-  regenerateIndex()
-}
+if (freshRows.length) updateMeta(freshRows)
+// Regenerate the barrel unconditionally — augments don't change the file
+// list, but siblings do, and a no-op regenerate is cheap.
+regenerateIndex()
 
 console.log(`
 Scanned ${dirs.length} upstream icons:
-  written:        ${results.written}
-  skipped-exists: ${results['skipped-exists']}
-  failed:         ${results.failed.length}
+  written (fresh):        ${results.written}
+  augmented (variant):    ${results.augmented}
+  sibling (numbered):     ${results.sibling}
+  skipped existing pqoq:  ${results['skipped-existing-pqoqubbw']}
+  skipped has lucide:     ${results['skipped-has-lucide']}
+  skipped sibling exists: ${results['skipped-existing-sibling']}
+  failed:                 ${results.failed.length}
 `)
+
+if (results.siblingReasons.length) {
+  console.log('Numbered siblings written (structural mismatch):')
+  for (const s of results.siblingReasons) {
+    console.log(`  ${s.from} → ${s.to}  (${s.reason})`)
+  }
+  console.log()
+}
+
+if (results.drift.length) {
+  console.log(`Geometry-drift notices (${results.drift.length}) — augmented, but upstream's \`d\` differs from existing; eyeball the result:`)
+  for (const d of results.drift) {
+    console.log(`  ${d.kebab}.${d.partKey}`)
+    console.log(`      existing: ${d.existingD}`)
+    console.log(`      upstream: ${d.upstreamD}`)
+  }
+  console.log()
+}
+
 if (results.failed.length) {
   // Group failures by reason prefix for easier scanning.
   const byReason = new Map()

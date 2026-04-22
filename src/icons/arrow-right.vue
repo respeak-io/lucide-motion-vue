@@ -108,6 +108,28 @@ const animations = {
     path1: {},
     path2: {},
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    group: {},
+    path1: {
+  initial: { d: "M5 12h14" },
+  animate: {
+    d: ["M5 12h14", "M5 12h9", "M5 12h14"],
+    transition: {
+      duration: 0.4,
+    },
+  },
+    },
+    path2: {
+  initial: { d: "m12 5 7 7-7 7", translateX: 0 },
+  animate: {
+    d: "m12 5 7 7-7 7",
+    translateX: [0, -3, 0],
+    transition: {
+      duration: 0.4,
+    },
+  },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

@@ -111,6 +111,137 @@ const animations = {
     path8: popperAnimation,
     path9: popperAnimation,
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    group: {},
+    path1: {
+  initial: { translateX: 0, translateY: 0 },
+  animate: {
+    translateX: [-1.5, 0],
+    translateY: [1.5, 0],
+    transition: {
+      velocity: 0.3,
+    },
+  },
+    },
+    path2: {
+  initial: { translateX: 0, translateY: 0 },
+  animate: {
+    translateX: [-1.5, 0],
+    translateY: [1.5, 0],
+    transition: {
+      velocity: 0.3,
+    },
+  },
+    },
+    path3: {
+  initial: { opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+  animate: {
+    opacity: [0, 1],
+    translateX: [-5, 0],
+    translateY: [5, 0],
+    scale: [0.5, 0.8, 1, 1.1, 1],
+    transition: {
+      duration: 0.7,
+    },
+  },
+    },
+    path4: {
+  initial: { opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+  animate: {
+    opacity: [0, 1],
+    translateX: [-5, 0],
+    translateY: [5, 0],
+    scale: [0.5, 0.8, 1, 1.1, 1],
+    transition: {
+      duration: 0.7,
+    },
+  },
+    },
+    path5: {
+  initial: { opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+  animate: {
+    opacity: [0, 1],
+    translateX: [-5, 0],
+    translateY: [5, 0],
+    scale: [0.5, 0.8, 1, 1.1, 1],
+    transition: {
+      duration: 0.7,
+    },
+  },
+    },
+    path6: {
+  initial: { opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+  animate: {
+    opacity: [0, 1],
+    translateX: [-5, 0],
+    translateY: [5, 0],
+    scale: [0.5, 0.8, 1, 1.1, 1],
+    transition: {
+      duration: 0.7,
+    },
+  },
+    },
+    path7: {
+  initial: {
+    opacity: 1,
+    pathLength: 1,
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+  },
+  animate: {
+    opacity: [0, 1],
+    scale: [0.3, 0.8, 1, 1.1, 1],
+    pathLength: [0, 0.5, 1],
+    translateX: [-5, 0],
+    translateY: [5, 0],
+    transition: {
+      duration: 0.7,
+      velocity: 0.3,
+    },
+  },
+    },
+    path8: {
+  initial: {
+    opacity: 1,
+    pathLength: 1,
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+  },
+  animate: {
+    opacity: [0, 1],
+    scale: [0.3, 0.8, 1, 1.1, 1],
+    pathLength: [0, 0.5, 1],
+    translateX: [-5, 0],
+    translateY: [5, 0],
+    transition: {
+      duration: 0.7,
+      velocity: 0.3,
+    },
+  },
+    },
+    path9: {
+  initial: {
+    opacity: 1,
+    pathLength: 1,
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+  },
+  animate: {
+    opacity: [0, 1],
+    scale: [0.3, 0.8, 1, 1.1, 1],
+    pathLength: [0, 0.5, 1],
+    translateX: [-5, 0],
+    translateY: [5, 0],
+    transition: {
+      duration: 0.7,
+      velocity: 0.3,
+    },
+  },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

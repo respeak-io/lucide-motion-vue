@@ -64,6 +64,24 @@ const animations = {
       return paths;
     })(),
   },
+  'lucide-animated': {
+    group: {},
+    path1: {
+  initial: { opacity: 1 },
+  animate: (i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }),
+    },
+    path2: {},
+    path3: {},
+    path4: {},
+    path5: {},
+    path6: {},
+    path7: {},
+    path8: {},
+    path9: {},
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

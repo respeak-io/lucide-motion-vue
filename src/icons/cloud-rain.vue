@@ -44,6 +44,55 @@ const animations = {
     path3: rainAnimation,
     path4: rainAnimation,
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    path1: {
+  initial: {
+    opacity: 1,
+  },
+  animate: {
+    opacity: [1, 0.2, 1],
+    transition: {
+      duration: 1,
+      repeat: Number.POSITIVE_INFINITY,
+      ease: "easeInOut",
+    },
+  },
+    },
+    group: {
+  animate: {
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+    },
+    path2: {
+  initial: {
+    opacity: 1,
+  },
+  animate: {
+    opacity: [1, 0.2, 1],
+    transition: {
+      duration: 1,
+      repeat: Number.POSITIVE_INFINITY,
+      ease: "easeInOut",
+    },
+  },
+    },
+    path3: {
+  initial: {
+    opacity: 1,
+  },
+  animate: {
+    opacity: [1, 0.2, 1],
+    transition: {
+      duration: 1,
+      repeat: Number.POSITIVE_INFINITY,
+      ease: "easeInOut",
+    },
+  },
+    },
+    path4: {},
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

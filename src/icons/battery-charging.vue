@@ -36,6 +36,23 @@ const animations = {
     },
     line: {},
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    path1: {
+            initial: { scale: 1, opacity: 1 },
+            animate: {
+              scale: [1, 1.2, 1],
+              opacity: [1, 0.8, 1],
+              transition: {
+                duration: 0.8,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "easeInOut",
+              },
+            },
+    },
+    path2: {},
+    path3: {},
+    line: {},
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

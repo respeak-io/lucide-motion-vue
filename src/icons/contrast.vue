@@ -47,6 +47,21 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    circle: {},
+    path: {
+  initial: { rotate: 0 },
+  animate: {
+    rotate: 180,
+    transformOrigin: "left center",
+    transition: {
+      type: "spring",
+      stiffness: 80,
+      damping: 12,
+    },
+  },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

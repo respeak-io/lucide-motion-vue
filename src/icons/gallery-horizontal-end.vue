@@ -127,6 +127,51 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    path1: {
+  initial: {
+    translateX: 0,
+    opacity: 1,
+    transition: {
+      type: "tween",
+      stiffness: 200,
+      damping: 13,
+    },
+  },
+  animate: (i: number) => ({
+    translateX: [2 * i, 0],
+    opacity: [0, 1],
+    transition: {
+      delay: 0.25 * (2 - i),
+      type: "tween",
+      stiffness: 200,
+      damping: 13,
+    },
+  }),
+    },
+    path2: {
+  initial: {
+    translateX: 0,
+    opacity: 1,
+    transition: {
+      type: "tween",
+      stiffness: 200,
+      damping: 13,
+    },
+  },
+  animate: (i: number) => ({
+    translateX: [2 * i, 0],
+    opacity: [0, 1],
+    transition: {
+      delay: 0.25 * (2 - i),
+      type: "tween",
+      stiffness: 200,
+      damping: 13,
+    },
+  }),
+    },
+    rect: {},
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

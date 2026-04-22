@@ -37,6 +37,14 @@ const animations = {
       },
     },
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    rect: {},
+    line: {},
+    arrow: {
+  initial: { x: 0 },
+  animate: { x: [0, 1.5, 0] },
+    },
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

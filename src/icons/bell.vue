@@ -39,6 +39,14 @@ const animations = {
     },
     path2: {},
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    group: {
+  initial: { rotate: 0 },
+  animate: { rotate: [0, -10, 10, -10, 0] },
+    },
+    path1: {},
+    path2: {},
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)

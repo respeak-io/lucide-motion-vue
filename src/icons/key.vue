@@ -58,6 +58,30 @@ const animations = {
     teeth: {},
     circle: {},
   } satisfies Record<string, Variants>,
+  'lucide-animated': {
+    group: {
+            initial: {
+              rotate: 0,
+              transition: {
+                type: "spring",
+                stiffness: 120,
+                damping: 14,
+                duration: 0.8,
+              },
+            },
+            animate: {
+              rotate: [-3, -33, -25, -28],
+              transition: {
+                duration: 0.6,
+                times: [0, 0.6, 0.8, 1],
+                ease: "easeInOut",
+              },
+            },
+    },
+    stem: {},
+    teeth: {},
+    circle: {},
+  } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
 const variants = getVariants(animations)
