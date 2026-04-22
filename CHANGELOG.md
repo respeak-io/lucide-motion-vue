@@ -8,6 +8,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **+86 icons gain a `lucide-animated` variant, +19 new numbered-sibling icons** imported from [pqoqubbw/icons](https://github.com/pqoqubbw/icons). Existing icons whose upstream counterpart shares the same shape get a new variant you can pick via `animation="lucide-animated"`; icons whose upstream shape genuinely differs (e.g. `send`'s swoosh vs. the original paper-plane) ship as siblings — `Send2`, `Moon2`, `X2`, `AlarmClock2`, etc. — so both the existing animation and the pqoqubbw design stay available. Every new variant carries its `source: 'lucide-animated'` tag in `iconsMeta`.
 - **`triggerTarget` prop** on every icon and on `<AnimateIcon>` — binds hover/tap listeners to an ancestor element instead of the icon's own span wrapper. Accepts `'self'` (default), `'parent'`, or `` `closest:${selector}` ``. Lets you drop animation into existing `<button><Icon /></button>` markup without restructuring to `as="template"` (`<Heart animateOnHover triggerTarget="parent" />`). `as="template"` is still the right tool when one trigger should drive several icons. Exported as type `TriggerTarget` for wrapper authors. New "Migrating existing buttons" section in the README and the docs `Buttons` page.
 - **Nuxt module** at `@respeak/lucide-motion-vue/nuxt` — auto-registers `<AnimateIcon>` and every icon with an `Animated` suffix by default (`<HeartAnimated>`, `<Link2Animated>`, …), so the library coexists with `lucide-vue-next`'s static `<Heart>` without collisions. Naming is configurable via the `lucideMotion` key in `nuxt.config`. Per-icon tree-shaking is preserved.
 - **`clip` prop** on every icon and on `<AnimateIcon>`. Opt-in boolean that hides overflow at the wrapper's box — use it for animations that deliberately move parts off-screen (`<SendAnimated animateOnHover clip />`, rocket's `launch` variant, etc.). Off by default so icons that render outside their box on purpose (`Link2`'s burst particles, some `lucide-animated` variants) keep working.
@@ -15,6 +16,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 - **SSR safety**: `<AnimateIcon>` no longer throws `requestAnimationFrame is not defined` when rendered server-side (Nuxt, vite-ssg) with a truthy `animate` prop. Client hydration still gets the deferred animation frame.
+- Docs site: the `#clip-demo` link in the Props table no longer bounces you back to the browse view (the hash router treated the anchor as an unknown route). It now scrolls directly to the subsection without rewriting the URL hash.
 
 ## [0.3.2] - 2026-04-21
 
