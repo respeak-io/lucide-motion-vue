@@ -206,11 +206,19 @@ const html = computed(() => {
     : [{ type: null, text: props.code }]
   return emit(toks)
 })
+
+// Strip leading `$ ` / `# ` shell prompts from bash blocks so the copy button
+// yields a pasteable command — the prompt glyph is a visual cue, not content.
+const copyText = computed(() =>
+  props.lang === 'bash'
+    ? props.code.replace(/^(\s*)[$#]\s?/gm, '$1')
+    : props.code,
+)
 </script>
 
 <template>
   <div class="code-block">
     <pre><code v-html="html" /></pre>
-    <CopyButton v-if="copyable" :text="code" />
+    <CopyButton v-if="copyable" :text="copyText" />
   </div>
 </template>
