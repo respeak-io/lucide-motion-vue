@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { provide, ref, watch } from 'vue'
+import { onBeforeUnmount, provide, ref, watch } from 'vue'
 import { useInView } from 'motion-v'
-import { AnimateIconKey, type Trigger, type VariantName } from './context'
+import {
+  AnimateIconKey,
+  resolveHoverTarget,
+  type HoverTarget,
+  type Trigger,
+  type VariantName,
+} from './context'
 
 const props = withDefaults(
   defineProps<{
@@ -9,6 +15,7 @@ const props = withDefaults(
     animateOnHover?: Trigger
     animateOnTap?: Trigger
     animateOnView?: Trigger
+    hoverTarget?: HoverTarget
     animation?: string
     persistOnAnimateEnd?: boolean
     initialOnAnimateEnd?: boolean
@@ -25,6 +32,7 @@ const props = withDefaults(
     animateOnHover: false,
     animateOnTap: false,
     animateOnView: false,
+    hoverTarget: undefined,
     animation: 'default',
     persistOnAnimateEnd: false,
     initialOnAnimateEnd: false,
@@ -65,10 +73,45 @@ watch(isInView, v => {
   v ? start(props.animateOnView) : stop()
 })
 
-function onEnter() { if (props.animateOnHover) start(props.animateOnHover) }
-function onLeave() { if (props.animateOnHover || props.animateOnTap) stop() }
+// When `hoverTarget` resolves to an ancestor element, hover listeners go
+// there instead of the wrapper span. The span's own @mouseenter/@mouseleave
+// short-circuit the hover branch so the animation doesn't double-fire, but
+// still handle tap cancellation when the pointer slides out mid-press.
+const hoverOwner = ref<HTMLElement | null>(null)
+function onEnter() { if (props.animateOnHover && !hoverOwner.value) start(props.animateOnHover) }
+function onLeave() {
+  if (props.animateOnTap) { stop(); return }
+  if (props.animateOnHover && !hoverOwner.value) stop()
+}
 function onDown()  { if (props.animateOnTap) start(props.animateOnTap) }
 function onUp()    { if (props.animateOnTap) stop() }
+
+function onOwnerEnter() { if (props.animateOnHover) start(props.animateOnHover) }
+function onOwnerLeave() { if (props.animateOnHover) stop() }
+
+function detachOwner() {
+  const el = hoverOwner.value
+  if (!el) return
+  el.removeEventListener('pointerenter', onOwnerEnter)
+  el.removeEventListener('pointerleave', onOwnerLeave)
+  hoverOwner.value = null
+}
+
+watch(
+  [viewRef, () => props.hoverTarget, () => props.animateOnHover],
+  ([wrapper, target, onHover]) => {
+    detachOwner()
+    if (!onHover || !target || target === 'self') return
+    const el = resolveHoverTarget(target, wrapper)
+    if (!el) return
+    hoverOwner.value = el
+    el.addEventListener('pointerenter', onOwnerEnter)
+    el.addEventListener('pointerleave', onOwnerLeave)
+  },
+  { flush: 'post' },
+)
+
+onBeforeUnmount(detachOwner)
 
 // Icons that should loop bake `repeat: Infinity` into their own variant
 // transitions — motion handles those natively. This callback only exists

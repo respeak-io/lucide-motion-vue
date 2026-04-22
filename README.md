@@ -112,6 +112,7 @@ Every icon accepts:
 | `animateOnHover`      | `boolean \| string`      | `false`  | Play while hovered.                                           |
 | `animateOnTap`        | `boolean \| string`      | `false`  | Play while pointer is down.                                   |
 | `animateOnView`       | `boolean \| string`      | `false`  | Play when the icon enters the viewport.                       |
+| `hoverTarget`         | `HoverTarget`            | `'self'` | Element whose hover drives `animateOnHover` — see below.      |
 | `animation`           | `string`                 | `default`| Which named variant group to pull from (e.g. `fill`).         |
 | `persistOnAnimateEnd` | `boolean`                | `false`  | Keep final state instead of returning to `initial`.           |
 | `initialOnAnimateEnd` | `boolean`                | `false`  | Force snap to `initial` when animation ends.                  |
@@ -155,6 +156,7 @@ All the trigger/animation props below also work directly on individual icons; th
 | `animateOnHover`      | `boolean \| string` | `false`   | Play while hovered.                                        |
 | `animateOnTap`        | `boolean \| string` | `false`   | Play while pointer is down.                                |
 | `animateOnView`       | `boolean \| string` | `false`   | Play when the wrapper enters the viewport.                 |
+| `hoverTarget`         | `HoverTarget`       | `'self'`  | Element whose hover drives `animateOnHover` — see below.   |
 | `animation`           | `string`            | `default` | Which named variant group to pull from.                    |
 | `persistOnAnimateEnd` | `boolean`           | `false`   | Keep final state instead of returning to `initial`.        |
 | `initialOnAnimateEnd` | `boolean`           | `false`   | Force snap to `initial` when animation ends.               |
@@ -180,6 +182,40 @@ All the trigger/animation props below also work directly on individual icons; th
   </button>
 </AnimateIcon>
 ```
+
+## `hoverTarget` — let the parent drive the hover
+
+For the most common "icon sits inside a button, button should be the hover area" case, the `<AnimateIcon as="template">` wrapper works but costs three extra lines per button. `hoverTarget` gives you the same behavior inline:
+
+```vue
+<!-- hover the whole button, the icon animates -->
+<button class="btn">
+  <Heart animateOnHover hoverTarget="parent" />
+  Favorite
+</button>
+
+<!-- walk up to the closest interactive element -->
+<a href="/trash" class="card with-icon-deep-inside">
+  <span class="chrome">
+    <Trash2 animateOnHover hoverTarget="closest:a, button, [role='button']" />
+  </span>
+  Delete
+</a>
+
+<!-- explicit element ref (Vuetify / shadcn / anything) -->
+<script setup lang="ts">
+import { ref } from 'vue'
+const btn = ref<HTMLElement | null>(null)
+</script>
+<template>
+  <v-btn ref="btn">
+    <Heart animateOnHover :hover-target="btn" class="mr-2" />
+    Favorite
+  </v-btn>
+</template>
+```
+
+`HoverTarget` is `'self' | 'parent' | \`closest:${selector}\` | HTMLElement | Ref<HTMLElement | null>`. Defaults to `'self'` (the old behavior). Has no effect unless `animateOnHover` is truthy — think of it as a modifier, not a separate trigger. Works on individual icons and on `<AnimateIcon>` itself.
 
 ## Discovering variants (`iconsMeta`)
 

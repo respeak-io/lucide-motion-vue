@@ -69,6 +69,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     :animateOnHover="props.animateOnHover"
     :animateOnTap="props.animateOnTap"
     :animateOnView="props.animateOnView"
+    :hoverTarget="props.hoverTarget"
     :animation="props.animation"
     :persistOnAnimateEnd="props.persistOnAnimateEnd"
     :initialOnAnimateEnd="props.initialOnAnimateEnd"

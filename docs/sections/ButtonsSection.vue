@@ -15,6 +15,17 @@ import { AnimateIcon, Heart } from '@respeak/lucide-motion-vue'
   </AnimateIcon>
 </template>`
 
+const hoverTargetSnippet = `<script setup lang="ts">
+import { Heart } from '@respeak/lucide-motion-vue'
+<\/script>
+
+<template>
+  <button class="btn">
+    <Heart :size="18" animateOnHover hover-target="parent" />
+    Favorite
+  </button>
+</template>`
+
 const vuetifySnippet = `<AnimateIcon animateOnHover as="template" v-slot="{ on }">
   <v-btn color="primary" v-on="on">
     <Heart :size="18" class="mr-2" />
@@ -58,6 +69,31 @@ const vuetifySnippet = `<AnimateIcon animateOnHover as="template" v-slot="{ on }
         </AnimateIcon>
       </div>
       <CodeBlock :code="snippet" lang="vue" />
+    </div>
+
+    <h3>Leaner: <code>hoverTarget</code> on the icon</h3>
+    <p>
+      For the most common case — button owns the hover area — you don't need
+      the wrapper at all. Set <code>hoverTarget="parent"</code> (or any
+      <code>closest:</code> selector) directly on the icon and the button's
+      hover drives the animation, with zero extra markup.
+    </p>
+    <div class="doc-demo">
+      <div class="demo-stage demo-stage-row">
+        <button class="demo-btn">
+          <Heart :size="18" animateOnHover hover-target="parent" />
+          Favorite
+        </button>
+        <button class="demo-btn demo-btn-danger">
+          <Trash2 :size="18" animateOnHover hover-target="parent" />
+          Delete
+        </button>
+        <button class="demo-btn demo-btn-ghost">
+          <Download :size="18" animateOnHover hover-target="parent" />
+          Download
+        </button>
+      </div>
+      <CodeBlock :code="hoverTargetSnippet" lang="vue" />
     </div>
 
     <h3>With Vuetify</h3>
