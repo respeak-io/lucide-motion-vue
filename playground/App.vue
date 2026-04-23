@@ -19,6 +19,18 @@ const playing = ref(false)
         </v-card>
 
         <v-card class="pa-6 mb-4">
+          <h2 class="text-h6 mb-3">
+            1a. CSS-sized icon (class wins — <code>:size</code> unset)
+          </h2>
+          <p class="text-caption mb-2">
+            Both icons should render at 72×72. The animated one self-wraps via
+            <code>animateOnHover</code>; the class must still reach the svg.
+          </p>
+          <BetweenVerticalStart class="icon-lg" />
+          <Heart animateOnHover class="icon-lg ml-4" style="color: crimson" />
+        </v-card>
+
+        <v-card class="pa-6 mb-4">
           <h2 class="text-h6 mb-3">2. Self-wrapped: <code>animateOnTap</code></h2>
           <BetweenVerticalStart animateOnTap :size="48" />
         </v-card>
@@ -73,3 +85,16 @@ const playing = ref(false)
     </v-main>
   </v-app>
 </template>
+
+<style>
+/*
+  Not scoped on purpose — scoped selectors only attach `data-v-*` to a child
+  component's root, so with a self-wrapped icon they'd match the span wrapper
+  but not the inner svg. Global rules mirror how consumers ship utility CSS
+  (Tailwind, a global app.css, etc.).
+*/
+.icon-lg {
+  width: 72px;
+  height: 72px;
+}
+</style>

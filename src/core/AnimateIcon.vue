@@ -1,5 +1,18 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
+import {
+  cloneVNode,
+  Comment,
+  computed,
+  defineComponent,
+  onBeforeUnmount,
+  onMounted,
+  provide,
+  ref,
+  Text,
+  useAttrs,
+  useSlots,
+  watch,
+} from 'vue'
 import { useInView } from 'motion-v'
 import {
   AnimateIconKey,
@@ -7,6 +20,13 @@ import {
   type TriggerTarget,
   type VariantName,
 } from './context'
+
+// Fallthrough attrs (especially `class` and `style`) are forwarded onto the
+// first vnode of the default slot rather than onto our <span> wrapper — see
+// `ForwardedSlot` below. Without this opt-out, Vue's default inheritance
+// sends `<Heart class="w-6 h-6" animateOnHover />` to the span instead of the
+// inner <motion.svg>, silently breaking CSS-based sizing.
+defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
@@ -119,6 +139,42 @@ const on = {
 }
 defineExpose({ on })
 
+// Forward fallthrough attrs onto the first element-like vnode of our default
+// slot. Icons that self-wrap (any trigger prop set) render
+// `<AnimateIcon><Icon /></AnimateIcon>`, so without this the user's `class`
+// and `style` would land on the span wrapper instead of the inner
+// <motion.svg>. That silently breaks the lucide-vue-next idiom of sizing via
+// CSS utility classes (`w-6 h-6`, `.icon { width: 1em }`). We also forward
+// events / aria / id / data-* so `@click`, `aria-label`, etc. continue to
+// work — they would otherwise be dropped entirely under inheritAttrs:false.
+// cloneVNode merges class and style rather than overwriting, so explicit
+// bindings on the slotted vnode win.
+const attrs = useAttrs()
+const slots = useSlots()
+const ForwardedSlot = defineComponent({
+  name: 'AnimateIconForwardedSlot',
+  inheritAttrs: false,
+  setup() {
+    return () => {
+      const nodes = slots.default?.() ?? []
+      const keys = Object.keys(attrs)
+      if (keys.length === 0) return nodes
+      const out: any[] = []
+      let forwarded = false
+      for (const n of nodes as any[]) {
+        const renderable = n && n.type !== Comment && n.type !== Text
+        if (!forwarded && renderable) {
+          out.push(cloneVNode(n, attrs))
+          forwarded = true
+        } else {
+          out.push(n)
+        }
+      }
+      return out
+    }
+  },
+})
+
 // When `triggerTarget !== 'self'`, hand listener duty off to the resolved
 // ancestor element. We must *also* drop them from the span, otherwise moving
 // between button → icon fires both and `start()` re-resets `current` mid-
@@ -198,6 +254,6 @@ defineSlots<{
     }"
     v-on="selfListeners"
   >
-    <slot />
+    <ForwardedSlot />
   </span>
 </template>
