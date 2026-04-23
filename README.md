@@ -6,13 +6,13 @@
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org)
 [![types](https://img.shields.io/npm/types/@respeak/lucide-motion-vue.svg)](https://www.npmjs.com/package/@respeak/lucide-motion-vue)
 
-**516 animated Lucide icons for Vue 3** — drop-in, tree-shakeable, TypeScript-first. A library *and* a docs site: live demos, a searchable gallery, and a playground (coming next) to tweak any icon and copy the snippet.
+**535 animated Lucide icons for Vue 3** — drop-in, tree-shakeable, TypeScript-first. A library *and* a docs site: live demos, a searchable gallery, and a playground (coming next) to tweak any icon and copy the snippet.
 
 [![Animated icon preview](./docs/hero.gif)](https://respeak-io.github.io/lucide-motion-vue/)
 
 **▶︎ [Live gallery + docs](https://respeak-io.github.io/lucide-motion-vue/)** — hover any icon to preview; click for variants, props, and copy-paste snippets. Built on [Motion for Vue](https://motion.dev/docs/vue), with icon variants ported from [animate-ui](https://github.com/imskyleen/animate-ui) and [lucide-animated / pqoqubbw/icons](https://github.com/pqoqubbw/icons).
 
-- **516 icons**, tree-shakable, one chunk per icon
+- **535 icons**, tree-shakable, one chunk per icon
 - Ergonomic triggers: `animateOnHover`, `animateOnTap`, `animateOnView`, or a composable `<AnimateIcon>` wrapper
 - Composition API, `<script setup>`, full TypeScript types
 - Native Motion loops — no hand-rolled rAF, no timers
