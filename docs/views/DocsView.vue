@@ -5,7 +5,7 @@ import QuickstartSection from '../sections/QuickstartSection.vue'
 import PropsSection from '../sections/PropsSection.vue'
 import ButtonsSection from '../sections/ButtonsSection.vue'
 import VariantsSection from '../sections/VariantsSection.vue'
-import ColorSection from '../sections/ColorSection.vue'
+import StylingSection from '../sections/StylingSection.vue'
 import ProgrammaticSection from '../sections/ProgrammaticSection.vue'
 import TypescriptSection from '../sections/TypescriptSection.vue'
 import AccessibilitySection from '../sections/AccessibilitySection.vue'
@@ -136,7 +136,7 @@ onBeforeUnmount(() => {
       <PropsSection />
       <ButtonsSection />
       <VariantsSection />
-      <ColorSection />
+      <StylingSection />
       <ProgrammaticSection />
       <TypescriptSection />
       <AccessibilitySection />

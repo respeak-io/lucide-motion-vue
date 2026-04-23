@@ -7,7 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+- **`class` and `style` now reach the inner `<motion.svg>` when an icon
+  self-wraps.** Previously, setting any trigger (`animate`, `animateOnHover`,
+  `animateOnTap`, `animateOnView`) made the icon render as
+  `<AnimateIcon><Icon /></AnimateIcon>`, and Vue's default attribute
+  fallthrough sent the consumer's `class`/`style` to `AnimateIcon`'s `<span>`
+  wrapper instead of the SVG. CSS-based sizing (`<Heart class="w-6 h-6"
+  animateOnHover />`, the idiom `lucide-vue-next` users carry over) silently
+  broke. `<AnimateIcon>` is now `inheritAttrs: false` and forwards fallthrough
+  attrs (class, style, events, aria, data-*) onto the slot's first vnode via
+  `cloneVNode`. No icon-SFC changes; the static path (`<Heart class="w-6
+  h-6" />` without triggers) was already correct and is unaffected.
 
 ## [0.4.0] - 2026-04-22
 

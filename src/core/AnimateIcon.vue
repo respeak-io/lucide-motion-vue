@@ -1,5 +1,18 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
+import {
+  cloneVNode,
+  Comment,
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  provide,
+  ref,
+  Text,
+  useAttrs,
+  useSlots,
+  watch,
+  type VNode,
+} from 'vue'
 import { useInView } from 'motion-v'
 import {
   AnimateIconKey,
@@ -7,6 +20,9 @@ import {
   type TriggerTarget,
   type VariantName,
 } from './context'
+
+// See `ForwardedSlot` below for why fallthrough is opted out.
+defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
@@ -119,6 +135,35 @@ const on = {
 }
 defineExpose({ on })
 
+// Forward fallthrough attrs onto the first element-like vnode of our default
+// slot. Icons that self-wrap (any trigger prop set) render
+// `<AnimateIcon><Icon /></AnimateIcon>`, so without this the user's `class`
+// and `style` would land on the span wrapper instead of the inner
+// <motion.svg> — silently breaking the lucide-vue-next idiom of sizing via
+// CSS utility classes (`w-6 h-6`, `.icon { width: 1em }`). We also forward
+// events / aria / id / data-* so `@click`, `aria-label`, etc. continue to
+// work — they would otherwise be dropped entirely under inheritAttrs:false.
+// cloneVNode merges class and style rather than overwriting, so explicit
+// bindings on the slotted vnode win.
+const attrs = useAttrs()
+const slots = useSlots()
+function ForwardedSlot(): VNode[] {
+  const nodes = (slots.default?.() ?? []) as VNode[]
+  if (Object.keys(attrs).length === 0) return nodes
+  const out: VNode[] = []
+  let forwarded = false
+  for (const n of nodes) {
+    const renderable = n && n.type !== Comment && n.type !== Text
+    if (!forwarded && renderable) {
+      out.push(cloneVNode(n, attrs))
+      forwarded = true
+    } else {
+      out.push(n)
+    }
+  }
+  return out
+}
+
 // When `triggerTarget !== 'self'`, hand listener duty off to the resolved
 // ancestor element. We must *also* drop them from the span, otherwise moving
 // between button → icon fires both and `start()` re-resets `current` mid-
@@ -198,6 +243,6 @@ defineSlots<{
     }"
     v-on="selfListeners"
   >
-    <slot />
+    <ForwardedSlot />
   </span>
 </template>

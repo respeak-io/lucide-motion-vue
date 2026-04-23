@@ -27,7 +27,7 @@
   - [Per-icon subpath imports](#per-icon-subpath-imports)
 - [Nuxt module](#nuxt-module)
 - [Props](#props)
-- [Color](#color)
+- [Styling](#styling)
 - [`<AnimateIcon>` wrapper](#animateicon-wrapper)
 - [Discovering variants (`iconsMeta`)](#discovering-variants-iconsmeta)
 - [TypeScript](#typescript)
@@ -172,7 +172,7 @@ Off by default because other icons (e.g. `link-2`'s burst particles) are designe
 
 Icons that are conceptually infinite (`LoaderCircle`, `Loader`, `LoaderPinwheel`, etc.) bake `repeat: Infinity` into their own variant transitions, so they loop as soon as you trigger them — no prop required. One-shot icons play once per trigger.
 
-## Color
+## Styling
 
 Icons use `stroke="currentColor"` (and `fill: 'currentColor'` for fill-based variants), so color is driven by the parent's CSS `color` — same pattern as `lucide-vue-next`. Fill-based animations automatically pick up whatever color you set, so the tween stays on-brand.
 
@@ -181,6 +181,14 @@ Icons use `stroke="currentColor"` (and `fill: 'currentColor'` for fill-based var
 <Heart animateOnHover class="text-rose-500" />
 <Heart animateOnHover animation="fill" style="color: #4f46e5" />
 <div style="color: var(--my-brand)"><Heart animateOnHover /></div>
+```
+
+Width and height can come from the `size` prop *or* CSS. Utility classes (`w-6 h-6`, `size-8`), scoped styles, and inline `style` all land on the inner `<svg>` — whether the icon self-wraps (any trigger prop set) or not.
+
+```vue
+<Heart :size="40" />
+<Heart animateOnHover class="w-10 h-10" />
+<Heart animateOnHover style="width: 40px; height: 40px" />
 ```
 
 ## `<AnimateIcon>` wrapper
