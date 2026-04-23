@@ -7,6 +7,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.4.1] - 2026-04-23
+
 ### Fixed
 - **`class` and `style` now reach the inner `<motion.svg>` when an icon
   self-wraps.** Previously, setting any trigger (`animate`, `animateOnHover`,
@@ -19,6 +23,13 @@ Versions follow [Semantic Versioning](https://semver.org/).
   attrs (class, style, events, aria, data-*) onto the slot's first vnode via
   `cloneVNode`. No icon-SFC changes; the static path (`<Heart class="w-6
   h-6" />` without triggers) was already correct and is unaffected.
+  Minor behavior change: `id`, `aria-*`, and event handlers on self-wrapped
+  icons now land on the `<svg>` instead of the `<span>` wrapper — the old
+  placement was a side effect of the same bug. Thanks @FAbrahamDev (#4).
+
+### Changed
+- Docs section `Color` renamed to `Styling` and gained a "Sizing via CSS"
+  subsection. Deep-links to `#color` become `#styling`.
 
 ## [0.4.0] - 2026-04-22
 
