@@ -6,7 +6,7 @@
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org)
 [![types](https://img.shields.io/npm/types/@respeak/lucide-motion-vue.svg)](https://www.npmjs.com/package/@respeak/lucide-motion-vue)
 
-**535 animated Lucide icons for Vue 3** — drop-in, tree-shakeable, TypeScript-first. A library *and* a docs site: live demos, a searchable gallery, and a playground (coming next) to tweak any icon and copy the snippet.
+**The largest animated icon library for Vue 3.** 535 Lucide icons, drop-in and tree-shakeable, with a live gallery, variant switcher, and copy-paste snippets.
 
 [![Animated icon preview](./docs/hero.gif)](https://respeak-io.github.io/lucide-motion-vue/)
 
