@@ -276,10 +276,11 @@ ${triggerLine}
     <h3>Rendering modes</h3>
     <ul class="doc-list">
       <li>
-        <code>as=&quot;span&quot;</code> (default) — renders an
-        <code>inline-flex</code> <code>&lt;span&gt;</code> that catches
-        pointer events and exposes a <code>viewRef</code> for
-        <code>animateOnView</code>. Good for grouping a small cluster of icons.
+        Default — no DOM wrapper. Pointer listeners and the
+        <code>animateOnView</code> ref are forwarded onto the slot's first
+        vnode (the icon's <code>&lt;svg&gt;</code>). Matches
+        <code>lucide-vue-next</code>'s bare-svg shape so CSS idioms like
+        <code>position: absolute</code> overlays keep working.
       </li>
       <li>
         <code>as=&quot;template&quot;</code> — renderless: exposes

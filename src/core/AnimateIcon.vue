@@ -2,7 +2,7 @@
 import {
   cloneVNode,
   Comment,
-  computed,
+  mergeProps,
   onBeforeUnmount,
   onMounted,
   provide,
@@ -34,24 +34,29 @@ const props = withDefaults(
     persistOnAnimateEnd?: boolean
     initialOnAnimateEnd?: boolean
     /**
-     * Clip overflow at the span's box — use when the active animation moves
-     * parts of the icon outside its viewBox on purpose (e.g. `send`'s plane
+     * Clip overflow at the icon's viewBox — use when the active animation
+     * moves parts of the icon outside its box on purpose (e.g. `send`'s plane
      * flies off-screen before returning). Default off so icons that
      * deliberately render outside their box (e.g. link-2's burst particles)
      * keep working.
      */
     clip?: boolean
     /**
-     * "span"     — render a <motion.span> wrapper that catches events (default).
+     * "default"  — forward events and the viewRef onto the slot's first vnode
+     *              (the icon's `<motion.svg>`). No DOM wrapper.
      * "template" — render slot content only; expose `{ on, viewRef }` so the
      *              consumer binds them to any element (e.g. a <v-btn>).
      *              Mirrors React's `asChild`.
+     *
+     * `"span"` is accepted as a legacy alias for `"default"`; prior versions
+     * rendered an `inline-flex` span wrapper, which broke absolute-positioned
+     * icon layouts (#5) — the wrapper is gone and events now live on the svg.
      */
-    as?: 'span' | 'template'
+    as?: 'default' | 'template' | 'span'
     /**
-     * Ancestor element to bind hover/tap listeners to instead of the span
-     * wrapper. Lets you drop animation into existing `<button><Icon /></button>`
-     * markup without switching to `as="template"`. Only applies in `as="span"`.
+     * Ancestor element to bind hover/tap listeners to instead of the icon
+     * itself. Lets you drop animation into existing `<button><Icon /></button>`
+     * markup without switching to `as="template"`. Ignored in `as="template"`.
      */
     triggerTarget?: TriggerTarget
   }>(),
@@ -64,7 +69,7 @@ const props = withDefaults(
     persistOnAnimateEnd: false,
     initialOnAnimateEnd: false,
     clip: false,
-    as: 'span',
+    as: 'default',
     triggerTarget: 'self',
   },
 )
@@ -103,7 +108,13 @@ function stop() {
 
 watch(() => props.animate, t => (t ? start(t) : stop()), { immediate: true })
 
-const viewRef = ref<HTMLElement | null>(null)
+const viewRef = ref<HTMLElement | SVGElement | null>(null)
+const setViewRef = (inst: unknown) => {
+  // Component refs resolve to the component proxy; unwrap to `$el` to reach
+  // the root DOM node (the icon's <motion.svg>). Element refs pass through.
+  const el = (inst as { $el?: unknown } | null | undefined)?.$el ?? inst
+  viewRef.value = (el as HTMLElement | SVGElement | null) ?? null
+}
 const isInView = useInView(viewRef, { once: false })
 watch(isInView, v => {
   if (!props.animateOnView) return
@@ -135,27 +146,51 @@ const on = {
 }
 defineExpose({ on })
 
-// Forward fallthrough attrs onto the first element-like vnode of our default
-// slot. Icons that self-wrap (any trigger prop set) render
-// `<AnimateIcon><Icon /></AnimateIcon>`, so without this the user's `class`
-// and `style` would land on the span wrapper instead of the inner
-// <motion.svg> — silently breaking the lucide-vue-next idiom of sizing via
-// CSS utility classes (`w-6 h-6`, `.icon { width: 1em }`). We also forward
-// events / aria / id / data-* so `@click`, `aria-label`, etc. continue to
-// work — they would otherwise be dropped entirely under inheritAttrs:false.
-// cloneVNode merges class and style rather than overwriting, so explicit
-// bindings on the slotted vnode win.
+// Forward everything onto the slot's first vnode — the icon's <motion.svg>.
+// Earlier versions wrapped the slot in an inline-flex <span> to catch events
+// and host the useInView ref, but that wrapper created a line box in block
+// parents that pushed absolute-positioned siblings down a line (#5). Events,
+// the viewRef, and the consumer's fallthrough attrs (class/style/aria/data/
+// id/events) all go onto the svg instead — matching lucide-vue-next's bare-
+// svg shape.
+//
+// mergeProps handles the merges that matter:
+//   - class/style concatenate (consumer + clip override both survive)
+//   - on* handlers combine into arrays (consumer's @mouseenter still fires
+//     alongside our hover trigger)
 const attrs = useAttrs()
 const slots = useSlots()
 function ForwardedSlot(): VNode[] {
   const nodes = (slots.default?.() ?? []) as VNode[]
-  if (Object.keys(attrs).length === 0) return nodes
   const out: VNode[] = []
   let forwarded = false
+
+  // When triggerTarget is an ancestor, don't bind listeners on the svg too —
+  // otherwise moving button → icon fires both and `start()` re-resets
+  // `current` mid-animation. attachExternal handles the ancestor case.
+  const eventHandlers =
+    props.triggerTarget === 'self'
+      ? {
+          onMouseenter: onEnter,
+          onMouseleave: onLeave,
+          onPointerdown: onDown,
+          onPointerup: onUp,
+        }
+      : {}
+
+  const clipStyle = props.clip ? { style: { overflow: 'hidden' } } : {}
+
+  const extras = mergeProps(
+    attrs,
+    eventHandlers,
+    clipStyle,
+    { ref: setViewRef as any },
+  )
+
   for (const n of nodes) {
     const renderable = n && n.type !== Comment && n.type !== Text
     if (!forwarded && renderable) {
-      out.push(cloneVNode(n, attrs))
+      out.push(cloneVNode(n, extras))
       forwarded = true
     } else {
       out.push(n)
@@ -164,22 +199,16 @@ function ForwardedSlot(): VNode[] {
   return out
 }
 
-// When `triggerTarget !== 'self'`, hand listener duty off to the resolved
-// ancestor element. We must *also* drop them from the span, otherwise moving
-// between button → icon fires both and `start()` re-resets `current` mid-
-// animation.
-const selfListeners = computed(() => (props.triggerTarget === 'self' ? on : {}))
-
 function resolveTarget(): HTMLElement | null {
   if (typeof window === 'undefined') return null
-  const span = viewRef.value
-  if (!span || props.triggerTarget === 'self') return null
-  if (props.triggerTarget === 'parent') return span.parentElement
+  const el = viewRef.value
+  if (!el || props.triggerTarget === 'self') return null
+  if (props.triggerTarget === 'parent') return el.parentElement
   if (props.triggerTarget.startsWith('closest:')) {
     const selector = props.triggerTarget.slice('closest:'.length).trim()
     if (!selector) return null
-    // Start from parentElement so the span itself cannot self-match.
-    return span.parentElement?.closest<HTMLElement>(selector) ?? null
+    // Start from parentElement so the icon itself cannot self-match.
+    return el.parentElement?.closest<HTMLElement>(selector) ?? null
   }
   return null
 }
@@ -208,12 +237,13 @@ onMounted(attachExternal)
 onBeforeUnmount(detachExternal)
 watch(() => props.triggerTarget, attachExternal)
 
-// Slot props are optional because the `as="span"` branch emits <slot />
-// without args; consumers using `as="template"` destructure them explicitly.
+// Slot props are optional because the default branch forwards onto the
+// slot's first vnode without args; consumers using `as="template"`
+// destructure them explicitly.
 defineSlots<{
   default?(props: {
     on?: typeof on
-    viewRef?: (el: HTMLElement | null) => void
+    viewRef?: (el: unknown) => void
   }): any
 }>()
 </script>
@@ -222,27 +252,7 @@ defineSlots<{
   <slot
     v-if="props.as === 'template'"
     :on="on"
-    :viewRef="(el: any) => (viewRef = el)"
+    :viewRef="setViewRef"
   />
-
-  <!--
-    Plain <span> (not motion.span): a motion-component wrapper with no
-    variants otherwise participates in motion-v's parent→child variant
-    propagation and was breaking nested pathLength animations on descendants
-    (e.g. fingerprint pulsating-only when selfWrap was active). We only need
-    this element for event capture + useInView, neither of which require it
-    to be animated itself.
-  -->
-  <span
-    v-else
-    ref="viewRef"
-    :style="{
-      display: 'inline-flex',
-      lineHeight: 0,
-      overflow: clip ? 'hidden' : undefined,
-    }"
-    v-on="selfListeners"
-  >
-    <ForwardedSlot />
-  </span>
+  <ForwardedSlot v-else />
 </template>

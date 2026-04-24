@@ -7,7 +7,23 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+- **Self-wrap no longer emits an inline-flex `<span>` wrapper.** When an icon
+  had any trigger (`animate`, `animateOnHover`, `animateOnTap`,
+  `animateOnView`), `AnimateIcon` wrapped the svg in a `<span style="display:
+  inline-flex; line-height: 0">`. In a block parent that span sat in the
+  inline formatting context and opened an anonymous line box — so an icon
+  with `position: absolute` (the standard lucide-vue-next "icon inside an
+  input" overlay) still pushed its block sibling down by ~1em. Events, the
+  `useInView` ref, `clip`, and consumer fallthrough attrs now forward onto
+  the slot's first vnode (the `<motion.svg>`) via `cloneVNode` + `mergeProps`
+  instead. Matches the bare-svg shape of `lucide-vue-next`. Thanks
+  @FAbrahamDev (#5).
+
+### Changed
+- `<AnimateIcon>`'s `as` prop renamed `'span'` → `'default'` to reflect the
+  new wrapperless behaviour; `'span'` is still accepted as a silent alias so
+  existing markup keeps compiling.
 
 ## [0.4.1] - 2026-04-23
 

@@ -212,20 +212,19 @@ All the trigger/animation props below also work directly on individual icons; th
 | `animation`           | `string`            | `default` | Which named variant group to pull from.                    |
 | `persistOnAnimateEnd` | `boolean`           | `false`   | Keep final state instead of returning to `initial`.        |
 | `initialOnAnimateEnd` | `boolean`           | `false`   | Force snap to `initial` when animation ends.               |
-| `clip`                | `boolean`           | `false`   | Clip overflow at the wrapper's box — for "exit" animations. |
-| `as`                  | `'span' \| 'template'` | `'span'` | Rendering mode — see below.                              |
-| `triggerTarget`       | `'self' \| 'parent' \| \`closest:${string}\`` | `'self'` | Bind hover/tap to an ancestor instead of the wrapper — see below. |
+| `clip`                | `boolean`           | `false`   | Clip overflow at the icon's viewBox — for "exit" animations. |
+| `as`                  | `'default' \| 'template'` | `'default'` | Rendering mode — see below.                              |
+| `triggerTarget`       | `'self' \| 'parent' \| \`closest:${string}\`` | `'self'` | Bind hover/tap to an ancestor instead of the icon — see below. |
 
 ### Rendering modes
 
-- **`as="span"`** (default): renders a plain `<span>` that catches the trigger events and exposes a `viewRef` for `animateOnView`. The `<span>` has `display: inline-flex` so it doesn't break flow layout.
+- **Default**: no DOM wrapper. Pointer listeners and the `animateOnView` ref are forwarded onto the slot's first vnode (the icon's `<svg>`). Matches `lucide-vue-next`'s bare-svg shape so CSS idioms like `position: absolute` overlays keep working.
 - **`as="template"`**: renderless — exposes `{ on, viewRef }` via the default scoped slot so you can bind them to any element (e.g. a `<v-btn>`, `<a>`, `<button>`, whole card). Nothing extra in the DOM.
 
 ```vue
-<!-- Span mode: icons become the visual trigger area -->
+<!-- Default mode: the first slotted svg becomes the trigger area -->
 <AnimateIcon animateOnHover>
   <Heart :size="20" />
-  <BetweenVerticalStart :size="20" />
 </AnimateIcon>
 
 <!-- Template mode: the button is the trigger -->
