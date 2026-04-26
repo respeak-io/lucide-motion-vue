@@ -5,6 +5,7 @@
 [![bundle size](https://img.shields.io/bundlephobia/minzip/@respeak/lucide-motion-vue?label=min%2Bgzip)](https://bundlephobia.com/package/@respeak/lucide-motion-vue)
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org)
 [![types](https://img.shields.io/npm/types/@respeak/lucide-motion-vue.svg)](https://www.npmjs.com/package/@respeak/lucide-motion-vue)
+[![live demo](https://img.shields.io/badge/demo-live-7c3aed.svg)](https://respeak-io.github.io/lucide-motion-vue/)
 
 **The largest animated icon library for Vue 3.** 535 Lucide icons, drop-in and tree-shakeable, with a live gallery, variant switcher, and copy-paste snippets.
 
