@@ -9,6 +9,25 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 _Nothing yet._
 
+## [0.4.2] - 2026-04-26
+
+### Fixed
+- **`Facebook` icon now scales correctly at sizes other than ~24px.** Upstream
+  pqoqubbw shipped the icon's `<svg>` without a `viewBox`, so the SVG used
+  `width`/`height` as its implicit user-coordinate space. The path coords
+  (0–24) only filled the canvas when `size` happened to land near 24; at
+  `:size="48"` the icon rendered at half-size anchored top-left, at 128 it
+  shrank to a corner glyph. Added `viewBox="0 0 24 24"` and patched
+  `port-pqoqubbw-icons.mjs` to inject a `viewBox` defensively when an
+  upstream icon ships without one, so a future regen can't silently revert it.
+
+### Internal
+- Added a layered test suite — Vitest unit (`AnimateIcon` triggers, context
+  helpers, generator structural shape, an all-icons smoke render) and
+  Playwright e2e (consumer interaction idioms) — wired into a GitHub Actions
+  CI workflow with parallel typecheck / build / unit / e2e jobs. No public
+  API change; package surface published to npm is unchanged.
+
 ## [0.4.1] - 2026-04-23
 
 ### Fixed
