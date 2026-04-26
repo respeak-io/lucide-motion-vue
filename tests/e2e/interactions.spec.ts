@@ -52,18 +52,17 @@ test('the :animate prop drives state from a sibling control', async ({ page }) =
 
 test('triggerTarget="parent" delegates listeners to the button', async ({ page }) => {
   const button = page.getByTestId('parent-button')
-  const icon = page.getByTestId('heart-parent')
 
-  // Hover the parent button — animation should run on the icon. We assert
-  // by watching the path's `style` attribute, which motion-v populates
-  // while a tween is active. The exact contents are motion-v-internal, so
-  // we only require the attribute to *appear* (vs. being empty/absent
-  // before hover).
+  // Hover the parent button — animation should run on the icon. The fixture
+  // uses Heart with animation="fill", which tweens the path's `fillOpacity`
+  // from 0 → 1. motion-v writes that as the SVG presentation attribute
+  // `fill-opacity` (not inline style), so we poll the attribute and assert
+  // it moved off the initial `"0"`.
+  const path = button.locator('svg path').first()
   await button.hover()
-  await page.waitForTimeout(120)
-  const styleAfter = await icon.locator('svg path').first().getAttribute('style')
-  expect(styleAfter, 'motion-v should write inline style during animate').not.toBeNull()
-  expect(styleAfter?.length ?? 0).toBeGreaterThan(0)
+  await expect
+    .poll(() => path.getAttribute('fill-opacity'), { timeout: 1500 })
+    .not.toBe('0')
 })
 
 test('as="template" wires hover to the consumer-controlled element', async ({ page }) => {

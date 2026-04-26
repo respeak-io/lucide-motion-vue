@@ -21,16 +21,16 @@ const playing = ref(false)
 
     <section data-testid="hover-section">
       <h2>Self-wrapped, animateOnHover</h2>
-      <Heart data-testid="heart-hover" animateOnHover :size="48" />
+      <div data-testid="heart-hover">
+        <Heart animateOnHover :size="48" />
+      </div>
     </section>
 
     <section data-testid="tap-section">
       <h2>Self-wrapped, animateOnTap</h2>
-      <BetweenVerticalStart
-        data-testid="between-tap"
-        animateOnTap
-        :size="48"
-      />
+      <div data-testid="between-tap">
+        <BetweenVerticalStart animateOnTap :size="48" />
+      </div>
     </section>
 
     <section data-testid="controlled-section">
@@ -38,7 +38,9 @@ const playing = ref(false)
       <button data-testid="play-toggle" @click="playing = !playing">
         {{ playing ? 'Stop' : 'Play' }}
       </button>
-      <Heart data-testid="heart-controlled" :animate="playing" :size="48" />
+      <div data-testid="heart-controlled">
+        <Heart :animate="playing" :size="48" />
+      </div>
     </section>
 
     <section data-testid="parent-trigger-section">
@@ -48,9 +50,9 @@ const playing = ref(false)
         style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;"
       >
         <Heart
-          data-testid="heart-parent"
           animateOnHover
           triggerTarget="parent"
+          animation="fill"
           :size="20"
         />
         <span>Like</span>
