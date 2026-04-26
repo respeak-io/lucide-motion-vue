@@ -11,6 +11,7 @@ import { AnimateIcon, Heart, BetweenVerticalStart } from '@respeak/lucide-motion
 //   4. delegation via triggerTarget="parent" (button-as-trigger pattern)
 //   5. composed <AnimateIcon> wrapping mixed content
 //   6. as="template" exposing on/viewRef to a custom element
+//   7. absolute-positioned icon overlaying a sibling input (#5 regression)
 
 const playing = ref(false)
 </script>
@@ -87,6 +88,33 @@ const playing = ref(false)
           <Heart :size="20" style="color: crimson" />
         </span>
       </AnimateIcon>
+    </section>
+
+    <section data-testid="overlay-section">
+      <h2>Absolute-positioned overlay (#5)</h2>
+      <!-- Reproduces the lucide-vue-next icon-in-input idiom. If the
+           self-wrap span comes back, the input gets pushed down by ~1em
+           because the inline-flex span claims a line box even though the
+           svg inside it is out of flow. -->
+      <div
+        data-testid="overlay-shell"
+        style="position: relative; max-width: 320px;"
+      >
+        <Heart
+          animateOnHover
+          data-testid="overlay-icon"
+          style="position: absolute; left: 10px; top: 50%;
+                 transform: translateY(-50%); width: 18px; height: 18px;
+                 color: crimson; pointer-events: none;"
+        />
+        <input
+          data-testid="overlay-input"
+          placeholder="Search"
+          style="display: block; width: 100%;
+                 padding: 8px 12px 8px 36px;
+                 border: 1px solid #ccc; border-radius: 6px;"
+        />
+      </div>
     </section>
   </main>
 </template>

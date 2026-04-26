@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 // One line, all three. Named imports shake — unused icons are dropped in prod.
-import { AnimateIcon, BetweenVerticalStart, Heart } from '@respeak/lucide-motion-vue'
+import { AnimateIcon, BetweenVerticalStart, Heart, Search } from '@respeak/lucide-motion-vue'
 
 const playing = ref(false)
 </script>
@@ -28,6 +28,35 @@ const playing = ref(false)
           </p>
           <BetweenVerticalStart class="icon-lg" />
           <Heart animateOnHover class="icon-lg ml-4" style="color: crimson" />
+        </v-card>
+
+        <v-card class="pa-6 mb-4">
+          <h2 class="text-h6 mb-3">
+            1b. Absolute-positioned icon inside an input (#5)
+          </h2>
+          <p class="text-caption mb-2">
+            The `lucide-vue-next` icon-in-input idiom: a positioned overlay
+            over a block input. Two things to verify on this card —
+            <strong>(a)</strong> the input sits flush against this paragraph
+            (no ~1em line-box gap above it), and <strong>(b)</strong> the
+            magnifying glass is vertically centered inside the input.
+          </p>
+          <p class="text-caption mb-2">
+            <strong>Note:</strong> motion-v writes an inline
+            <code>transform: none</code> on the rendered svg, which beats any
+            class-defined transform. So <code>translateY(-50%)</code> for
+            centering must be applied via inline <code>style</code>, not via
+            a CSS class. See the <code>style="…"</code> attribute below.
+          </p>
+          <div class="input-shell">
+            <Search
+              animateOnHover
+              style="position: absolute; left: 10px; top: 50%;
+                     transform: translateY(-50%); width: 18px; height: 18px;
+                     color: #666; pointer-events: none;"
+            />
+            <input class="input-field" placeholder="Search" />
+          </div>
         </v-card>
 
         <v-card class="pa-6 mb-4">
@@ -96,5 +125,17 @@ const playing = ref(false)
 .icon-lg {
   width: 72px;
   height: 72px;
+}
+
+.input-shell {
+  position: relative;
+  max-width: 320px;
+}
+.input-field {
+  display: block;
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 </style>

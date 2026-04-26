@@ -15,6 +15,17 @@ const sizingSnippet = `<!-- size prop, utility classes, and inline style all wor
 <Heart :size="40" />
 <Heart animateOnHover class="w-10 h-10" />
 <Heart animateOnHover style="width: 40px; height: 40px" />`
+
+const transformSnippet = `<!-- ✅ works: inline-style transform reaches the svg -->
+<div style="position: relative">
+  <Search animateOnHover style="position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%); width: 18px; height: 18px" />
+  <input style="padding-left: 36px" />
+</div>
+
+<!-- ❌ broken: motion-v overwrites .input-icon's transform with \`none\` -->
+<style>.input-icon { position: absolute; transform: translateY(-50%); }</style>
+<Search animateOnHover class="input-icon" />`
 </script>
 
 <template>
@@ -65,6 +76,26 @@ const sizingSnippet = `<!-- size prop, utility classes, and inline style all wor
       <code>Heart</code>'s <code>fill</code> variant), it tweens to
       <code>currentColor</code>, so the filled state automatically matches
       whatever the stroke already shows. No extra config required.
+    </p>
+
+    <h3><code>transform</code> must be inline (not via class)</h3>
+    <p>
+      motion-v writes an inline <code>style="transform: …"</code> on the
+      rendered <code>&lt;svg&gt;</code> to drive its animations, and inline
+      style beats any class-defined <code>transform</code>. So if you want to
+      apply your own <code>transform</code> to a self-wrapped icon (typically
+      <code>translateY(-50%)</code> for the icon-in-input centering idiom),
+      pass it via inline <code>style=</code>, not via a CSS class —
+      <code>mergeProps</code> flows the inline style through alongside
+      motion-v's transform, and your translation is preserved.
+    </p>
+    <CodeBlock :code="transformSnippet" lang="vue" />
+    <p>
+      This only matters for <code>transform</code> — every other property
+      (<code>position</code>, <code>top</code>, <code>width</code>,
+      <code>color</code>, etc.) reaches the svg fine via class. It doesn't
+      affect flex/grid centering at all (e.g. Vuetify
+      <code>&lt;v-text-field #prepend-inner&gt;</code> works with no CSS).
     </p>
   </section>
 </template>

@@ -148,14 +148,24 @@ Rule of thumb: `triggerTarget` for a single icon inside existing markup;
 `as="template"` when many icons share one trigger, or when the wrapper is
 a custom component that already spreads `v-on`.
 
-### One trigger, many icons (default span mode)
+### One trigger, many icons
+
+`<AnimateIcon>` forwards events onto the **first vnode** in its slot — there
+is no wrapper element of its own. So if you want one trigger to drive
+multiple icons, wrap them in a single element (any element works) so that
+event lives on something whose box covers all of them:
 
 ```vue
 <AnimateIcon animateOnHover>
-  <Heart :size="20" />
-  <Trash2 :size="20" />
+  <span style="display: inline-flex; gap: 12px">
+    <Heart :size="20" />
+    <Trash2 :size="20" />
+  </span>
 </AnimateIcon>
 ```
+
+Listing siblings directly under `<AnimateIcon>` would only trigger on the
+first one (Heart), since only that vnode receives the event handlers.
 
 ### Named variants
 
@@ -237,6 +247,29 @@ icon self-wraps (trigger prop set) or not.
 <Heart animateOnHover class="w-10 h-10" />
 <Heart animateOnHover style="width: 40px; height: 40px" />
 ```
+
+**`transform` is the one exception.** motion-v writes an inline
+`style="transform: …"` on the rendered svg, which beats any class-defined
+`transform`. So if you need to apply your own `transform` to a self-wrapped
+icon (typically `translateY(-50%)` to center it absolutely inside an
+`<input>`), pass it via inline `style=`, not via a class. `mergeProps`
+flows the inline style through alongside motion-v's transform.
+
+```vue
+<!-- ✅ inline-style transform reaches the svg -->
+<div style="position: relative">
+  <Search animateOnHover style="position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%); width: 18px; height: 18px" />
+  <input style="padding-left: 36px" />
+</div>
+
+<!-- ❌ class-based transform is overwritten by motion-v's `transform: none` -->
+<style>.input-icon { position: absolute; transform: translateY(-50%); }</style>
+<Search animateOnHover class="input-icon" />
+```
+
+This only matters for `transform`. Flex/grid centering (e.g. Vuetify
+`<v-text-field #prepend-inner>`) needs no CSS at all.
 
 ### Programmatic — replay on command
 

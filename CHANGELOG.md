@@ -9,6 +9,50 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 _Nothing yet._
 
+## [0.5.0] - 2026-04-26
+
+### Fixed
+- **Self-wrap no longer emits an inline-flex `<span>` wrapper.** When an icon
+  had any trigger (`animate`, `animateOnHover`, `animateOnTap`,
+  `animateOnView`), `AnimateIcon` wrapped the svg in a `<span style="display:
+  inline-flex; line-height: 0">`. In a block parent that span sat in the
+  inline formatting context and opened an anonymous line box — so an icon
+  with `position: absolute` (the standard lucide-vue-next "icon inside an
+  input" overlay) still pushed its block sibling down by ~1em. Events, the
+  `useInView` ref, `clip`, and consumer fallthrough attrs now forward onto
+  the slot's first vnode (the `<motion.svg>`) via `cloneVNode` + `mergeProps`
+  instead. Matches the bare-svg shape of `lucide-vue-next`. Thanks
+  @FAbrahamDev (#5).
+
+### Changed
+- `<AnimateIcon>`'s `as` prop renamed `'span'` → `'default'` to reflect the
+  new wrapperless behaviour; `'span'` is still accepted as a silent alias so
+  existing markup keeps compiling.
+- **Multi-child slot contract:** `<AnimateIcon>` now forwards events onto the
+  slot's *first* vnode rather than capturing them on its own DOM box. To
+  drive multiple icons from one trigger, wrap them in a single element so
+  the trigger area covers them all (e.g. `<span style="display: inline-flex">
+  <Heart/><Trash2/></span>`). Listing siblings directly under
+  `<AnimateIcon>` would only fire on the first one.
+
+### Documented
+- **`transform` must be applied via inline `style`, not via class.** motion-v
+  writes an inline `transform` on the rendered svg to drive its animations,
+  and inline style beats any class-defined `transform`. So idioms like
+  `top: 50%; transform: translateY(-50%)` for centering an absolute-positioned
+  icon need to live on the icon's `style` attribute rather than its class —
+  `mergeProps` flows the inline style through alongside motion-v's transform.
+  Affects only `transform`; every other property (`position`, `top`, `width`,
+  `color`, …) reaches the svg fine via class. Flex/grid centering (e.g.
+  Vuetify `<v-text-field #prepend-inner>`) needs no CSS at all.
+
+### Internal
+- New e2e regression test asserts a self-wrapped absolute-positioned icon
+  doesn't push its block sibling down (locks in #5 against re-introducing
+  any wrapper element).
+- Unit + smoke tests updated for the wrapperless DOM shape (events now
+  dispatch on the svg, no `<span>` to query).
+
 ## [0.4.2] - 2026-04-26
 
 ### Fixed
