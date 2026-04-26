@@ -10,11 +10,18 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "paths": {
       "@respeak/lucide-motion-vue": ["./src/index.ts"],
       "@respeak/lucide-motion-vue/icons/*": ["./src/icons/*.vue"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "playground/**/*.ts", "playground/**/*.vue"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "playground/**/*.ts",
+    "playground/**/*.vue",
+    "tests/**/*.ts",
+    "tests/**/*.vue"
+  ]
 }
