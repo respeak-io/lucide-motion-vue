@@ -22,6 +22,7 @@ test('fixture mounts without errors and renders all sections', async ({ page }) 
   await expect(page.getByTestId('parent-trigger-section')).toBeVisible()
   await expect(page.getByTestId('template-section')).toBeVisible()
   await expect(page.getByTestId('composed-section')).toBeVisible()
+  await expect(page.getByTestId('overlay-section')).toBeVisible()
 })
 
 test('hovering a self-wrapped icon renders an svg and survives mouse traffic', async ({ page }) => {
@@ -83,4 +84,27 @@ test('composed AnimateIcon hovers an entire pill of children', async ({ page }) 
   await page.waitForTimeout(120)
   // Both icons inside the pill should still be in the DOM after hover.
   await expect(pill.locator('svg')).toHaveCount(2)
+})
+
+test('absolute-positioned self-wrapped icon does not push its block sibling (#5)', async ({ page }) => {
+  // Regression for #5: the old self-wrap span was inline-flex, which claimed
+  // a ~1em line box even when its only child (the svg) was out of flow.
+  // That pushed the input below it down by ~1em. The wrapperless self-wrap
+  // means the svg is the only thing rendered, so the input sits flush.
+  const shell = page.getByTestId('overlay-shell')
+  const input = page.getByTestId('overlay-input')
+
+  const delta = await shell.evaluate((shellEl, inputSel) => {
+    const inputEl = document.querySelector(inputSel) as HTMLElement
+    return inputEl.getBoundingClientRect().top - shellEl.getBoundingClientRect().top
+  }, '[data-testid="overlay-input"]')
+
+  // Allow a couple of pixels for sub-pixel layout rounding. With the bug
+  // present, this number would be ~16-24 (one line-height of the parent).
+  expect(delta).toBeLessThan(4)
+
+  // And no span wrapper should exist between the shell and the icon —
+  // belt-and-braces against re-introducing a wrapper element.
+  const spanCount = await shell.locator(':scope > span').count()
+  expect(spanCount).toBe(0)
 })

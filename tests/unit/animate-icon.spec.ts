@@ -22,9 +22,11 @@ afterEach(() => {
 })
 
 // Mounts AnimateIcon with a tiny child that captures the provided context.
-// Returns helpers that target the *real* span (test-utils wraps the root in a
-// div, so events dispatched on `wrapper.element` would land on the wrong
-// node — `mouseenter` doesn't bubble).
+// Returns helpers that target the slot's first vnode (the inner svg). With
+// the wrapperless self-wrap, AnimateIcon no longer renders a span — events,
+// the viewRef, and consumer attrs are forwarded onto the svg via cloneVNode
+// + mergeProps. mouseenter doesn't bubble, so dispatching directly on the
+// svg is the only reliable way to fire the synthesized handlers.
 function mountIcon(props: Record<string, unknown> = {}, attrs: Record<string, unknown> = {}) {
   const captured: { ctx: AnimateIconContext | null } = { ctx: null }
   const Probe = defineComponent({
@@ -41,11 +43,11 @@ function mountIcon(props: Record<string, unknown> = {}, attrs: Record<string, un
       default: () => h('svg', { 'data-testid': 'inner-svg', viewBox: '0 0 24 24' }, [h(Probe)]),
     },
   })
-  const span = () => wrapper.find('span').element as HTMLElement
+  const svg = () => wrapper.find('svg[data-testid="inner-svg"]').element as SVGElement
   function fire(name: string) {
-    span().dispatchEvent(new Event(name))
+    svg().dispatchEvent(new Event(name))
   }
-  return { wrapper, captured, span, fire }
+  return { wrapper, captured, svg, fire }
 }
 
 describe('AnimateIcon — hover trigger', () => {
@@ -166,14 +168,14 @@ describe('AnimateIcon — animateOnView', () => {
 
 describe('AnimateIcon — clip', () => {
   it('applies overflow:hidden when clip is true', () => {
-    const { wrapper, span } = mountIcon({ clip: true })
-    expect(span().getAttribute('style') ?? '').toContain('overflow: hidden')
+    const { wrapper, svg } = mountIcon({ clip: true })
+    expect(svg().getAttribute('style') ?? '').toContain('overflow: hidden')
     wrapper.unmount()
   })
 
   it('omits overflow style when clip is false (default)', () => {
-    const { wrapper, span } = mountIcon({})
-    expect(span().getAttribute('style') ?? '').not.toContain('overflow: hidden')
+    const { wrapper, svg } = mountIcon({})
+    expect(svg().getAttribute('style') ?? '').not.toContain('overflow: hidden')
     wrapper.unmount()
   })
 })
@@ -222,11 +224,14 @@ describe('AnimateIcon — as="template"', () => {
 })
 
 describe('AnimateIcon — ForwardedSlot', () => {
-  it('forwards class onto the first slotted element, not the wrapper span', () => {
-    const { wrapper, span } = mountIcon({}, { class: 'icon-lg' })
+  it('forwards class onto the first slotted element with no wrapper element in the way', () => {
+    const { wrapper } = mountIcon({}, { class: 'icon-lg' })
     const svg = wrapper.find('svg[data-testid="inner-svg"]')
     expect(svg.classes()).toContain('icon-lg')
-    expect(span().classList.contains('icon-lg')).toBe(false)
+    // No span wrapper should exist anywhere in the rendered tree — the
+    // self-wrap span was removed in #5 because it created a layout-breaking
+    // line box for absolute-positioned icons.
+    expect(wrapper.find('span').exists()).toBe(false)
     wrapper.unmount()
   })
 
@@ -248,7 +253,7 @@ describe('AnimateIcon — ForwardedSlot', () => {
 })
 
 describe('AnimateIcon — triggerTarget="parent"', () => {
-  it('hovering the parent triggers the animation; hovering the span does not', async () => {
+  it('hovering the parent triggers the animation; hovering the icon svg does not', async () => {
     let captured: AnimateIconContext | null = null
     const Probe = defineComponent({
       setup() {
@@ -261,19 +266,20 @@ describe('AnimateIcon — triggerTarget="parent"', () => {
       template: `
         <button data-testid="outer">
           <AnimateIcon animateOnHover triggerTarget="parent">
-            <svg><Probe /></svg>
+            <svg data-testid="inner-svg"><Probe /></svg>
           </AnimateIcon>
         </button>
       `,
     })
     const wrapper = mount(Outer, { attachTo: document.body })
     const button = wrapper.find('[data-testid="outer"]').element as HTMLElement
-    const span = wrapper.find('span').element as HTMLElement
+    const svg = wrapper.find('svg[data-testid="inner-svg"]').element as SVGElement
 
-    // Hovering the icon's span must NOT fire when delegation is active —
+    // Hovering the icon svg must NOT fire when delegation is active —
     // otherwise nested mouseenter/leave between button → icon would re-reset
-    // mid-animation.
-    span.dispatchEvent(new Event('mouseenter'))
+    // mid-animation. ForwardedSlot skips its own event handlers when
+    // triggerTarget !== 'self'.
+    svg.dispatchEvent(new Event('mouseenter'))
     await flushPromises()
     expect(captured!.current.value).toBe('initial')
 

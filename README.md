@@ -192,13 +192,32 @@ Width and height can come from the `size` prop *or* CSS. Utility classes (`w-6 h
 <Heart animateOnHover style="width: 40px; height: 40px" />
 ```
 
+### `transform` must be inline (not via class)
+
+motion-v writes an inline `style="transform: …"` on the rendered `<svg>` to drive its animations, and inline style beats any class-defined `transform`. So if you want to apply your own `transform` to a self-wrapped icon (typically `translateY(-50%)` for the icon-in-input centering idiom), pass it via inline `style=`, not via a CSS class — `mergeProps` flows the inline style through alongside motion-v's transform, and your translation is preserved.
+
+```vue
+<!-- ✅ works: inline-style transform reaches the svg -->
+<div style="position: relative">
+  <Search animateOnHover style="position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%); width: 18px; height: 18px" />
+  <input style="padding-left: 36px" />
+</div>
+
+<!-- ❌ broken: motion-v overwrites .input-icon's transform with `none` -->
+<style>.input-icon { position: absolute; transform: translateY(-50%); }</style>
+<Search animateOnHover class="input-icon" />
+```
+
+This only matters for `transform` — every other property (`position`, `top`, `width`, `color`, etc.) reaches the svg fine via class. And it doesn't affect flex/grid centering at all (e.g. Vuetify `<v-text-field #prepend-inner>` works with no CSS).
+
 ## `<AnimateIcon>` wrapper
 
 ```ts
 import { AnimateIcon } from '@respeak/lucide-motion-vue'
 ```
 
-A thin wrapper that catches trigger events and propagates animation state (via `provide/inject`) to any icon nested inside. Use it when one trigger should drive multiple icons, or when the trigger element should be something other than the icon itself (button, card, link…).
+A renderless wrapper that catches trigger events on the slotted icon (or an ancestor) and propagates animation state (via `provide/inject`) to any icon nested inside. No DOM box of its own. Use it when one trigger should drive multiple icons, or when the trigger element should be something other than the icon itself (button, card, link…).
 
 ### Props
 
@@ -237,6 +256,19 @@ All the trigger/animation props below also work directly on individual icons; th
 </AnimateIcon>
 ```
 
+Because default mode forwards events onto the slot's *first* vnode (not its own DOM box), driving multiple icons from one trigger needs a single wrapping element so the trigger area covers them all:
+
+```vue
+<AnimateIcon animateOnHover>
+  <span style="display: inline-flex; gap: 12px">
+    <Heart :size="20" />
+    <Trash2 :size="20" />
+  </span>
+</AnimateIcon>
+```
+
+Listing siblings directly under `<AnimateIcon>` would only fire on the first one. Use `as="template"` if you want full control over which element captures events.
+
 ### Migrating existing buttons (`triggerTarget`)
 
 If you already have `<button><Icon /></button>` markup and want hover to fire on the whole button, set `triggerTarget` on the icon itself — no wrapper, no markup refactor:
@@ -262,7 +294,7 @@ Which one to reach for:
 - **`triggerTarget="parent"` / `"closest:…"`** — best for *migrations* and single-icon buttons. Additive (two props), no markup change.
 - **`as="template"`** — best when one trigger should drive *several* icons, or when the trigger isn't an ancestor of the icon.
 
-`triggerTarget` applies in `as="span"` mode only. In `as="template"` mode you already pick the trigger element by binding `on`.
+`triggerTarget` applies in `as="default"` mode only. In `as="template"` mode you already pick the trigger element by binding `on`.
 
 ## Discovering variants (`iconsMeta`)
 

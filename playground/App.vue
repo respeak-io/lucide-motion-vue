@@ -35,13 +35,26 @@ const playing = ref(false)
             1b. Absolute-positioned icon inside an input (#5)
           </h2>
           <p class="text-caption mb-2">
-            The `lucide-vue-next` icon-in-input idiom: a positioned overlay over
-            a block input. Triggered icon must sit at the top of the relative
-            container — if the self-wrap wrapper is back, the input gets pushed
-            down by ~1em.
+            The `lucide-vue-next` icon-in-input idiom: a positioned overlay
+            over a block input. Two things to verify on this card —
+            <strong>(a)</strong> the input sits flush against this paragraph
+            (no ~1em line-box gap above it), and <strong>(b)</strong> the
+            magnifying glass is vertically centered inside the input.
+          </p>
+          <p class="text-caption mb-2">
+            <strong>Note:</strong> motion-v writes an inline
+            <code>transform: none</code> on the rendered svg, which beats any
+            class-defined transform. So <code>translateY(-50%)</code> for
+            centering must be applied via inline <code>style</code>, not via
+            a CSS class. See the <code>style="…"</code> attribute below.
           </p>
           <div class="input-shell">
-            <Search animateOnHover class="input-icon" />
+            <Search
+              animateOnHover
+              style="position: absolute; left: 10px; top: 50%;
+                     transform: translateY(-50%); width: 18px; height: 18px;
+                     color: #666; pointer-events: none;"
+            />
             <input class="input-field" placeholder="Search" />
           </div>
         </v-card>
@@ -117,16 +130,6 @@ const playing = ref(false)
 .input-shell {
   position: relative;
   max-width: 320px;
-}
-.input-icon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  color: #666;
-  pointer-events: none;
 }
 .input-field {
   display: block;

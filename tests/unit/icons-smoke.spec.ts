@@ -46,9 +46,12 @@ describe('icons — smoke render', () => {
       props: { animateOnHover: true, size: 24 },
       attachTo: document.body,
     })
-    // Self-wrapped means: outer span (the AnimateIcon wrapper) → inner svg.
-    expect(wrapper.find('span').exists()).toBe(true)
+    // Self-wrapped now renders the bare svg directly (no span wrapper) —
+    // <AnimateIcon> forwards events/refs onto the slot's first vnode via
+    // cloneVNode + mergeProps. Asserting absence of the span locks in the
+    // #5 layout fix against re-introducing a wrapper.
     expect(wrapper.find('svg').exists()).toBe(true)
+    expect(wrapper.find('span').exists()).toBe(false)
     wrapper.unmount()
   })
 })
