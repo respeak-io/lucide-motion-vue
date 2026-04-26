@@ -662,12 +662,21 @@ const selfWrap = computed(() => hasOwnTriggers(props))
  */
 function addVElse(svgJsx, kind) {
   const marker = '<motion.svg\n    v-else\n    overflow="visible"'
+  let out
   if (kind === 'motion-svg') {
-    return svgJsx.replace(/^<motion\.svg\b/, marker)
+    out = svgJsx.replace(/^<motion\.svg\b/, marker)
+  } else {
+    out = svgJsx
+      .replace(/^<svg\b/, marker)
+      .replace(/<\/svg>$/, '</motion.svg>')
   }
-  return svgJsx
-    .replace(/^<svg\b/, marker)
-    .replace(/<\/svg>$/, '</motion.svg>')
+  // Defensive: a handful of upstream icons (e.g. facebook) ship the svg
+  // tag without a viewBox. Without one the icon collapses to its native
+  // size and the smoke test's viewBox assertion (rightly) fails.
+  if (!/\bviewBox=/.test(out)) {
+    out = out.replace(/^<motion\.svg\b/, '<motion.svg\n    viewBox="0 0 24 24"')
+  }
+  return out
 }
 
 /**
