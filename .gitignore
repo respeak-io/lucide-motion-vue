@@ -4,6 +4,8 @@ docs-dist
 *.log
 .DS_Store
 .playwright-mcp
+test-results
+playwright-report
 .tmp-hero
 .tmp-social
 .tmp-closeup

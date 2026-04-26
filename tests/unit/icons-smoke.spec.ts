@@ -25,12 +25,7 @@ describe('icons — smoke render', () => {
     expect(entries.length).toBeGreaterThan(500)
   })
 
-  // Icons whose template intentionally omits viewBox today. Tracked so the
-  // test still catches a *new* missing-viewBox regression introduced by the
-  // generator. Shrink this list as the underlying icons are fixed.
-  const KNOWN_NO_VIEWBOX = new Set(['facebook'])
-
-  it.each(entries)('$name renders an svg with a valid viewBox', ({ name, component }) => {
+  it.each(entries)('$name renders an svg with a valid viewBox', ({ component }) => {
     const wrapper = mount(component, {
       // No triggers: should render the bare <motion.svg> branch, not the
       // self-wrapped one. This is the most common consumer shape (icons
@@ -40,11 +35,9 @@ describe('icons — smoke render', () => {
     })
     const svg = wrapper.find('svg')
     expect(svg.exists()).toBe(true)
-    if (!KNOWN_NO_VIEWBOX.has(name)) {
-      // Most icons are 24×24; a handful (e.g. flask, syringe ported from
-      // upstream variants) use 512×512. Accept any zero-origin viewBox.
-      expect(svg.attributes('viewBox')).toMatch(/^0 0 \d+ \d+$/)
-    }
+    // Most icons are 24×24; a handful (e.g. flask, syringe ported from
+    // upstream variants) use 512×512. Accept any zero-origin viewBox.
+    expect(svg.attributes('viewBox')).toMatch(/^0 0 \d+ \d+$/)
     wrapper.unmount()
   })
 
