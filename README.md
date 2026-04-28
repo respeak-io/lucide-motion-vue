@@ -11,13 +11,15 @@
 
 [![Animated icon preview](./docs/hero.gif)](https://respeak-io.github.io/lucide-motion-vue/)
 
-**▶︎ [Live gallery + docs](https://respeak-io.github.io/lucide-motion-vue/)** — hover any icon to preview; click for variants, props, and copy-paste snippets. Built on [Motion for Vue](https://motion.dev/docs/vue), with icon variants ported from [animate-ui](https://github.com/imskyleen/animate-ui) and [lucide-animated / pqoqubbw/icons](https://github.com/pqoqubbw/icons).
+**▶︎ [Live gallery + docs](https://respeak-io.github.io/lucide-motion-vue/)** — hover any icon to preview; click for variants, props, and copy-paste snippets. Built on [Motion for Vue](https://motion.dev/docs/vue), ships a Nuxt module, SSR-safe, fully tree-shakable per icon.
 
-- **535 icons**, tree-shakable, one chunk per icon
-- Ergonomic triggers: `animateOnHover`, `animateOnTap`, `animateOnView`, or a composable `<AnimateIcon>` wrapper
-- Composition API, `<script setup>`, full TypeScript types
-- Native Motion loops — no hand-rolled rAF, no timers
-- Color via `currentColor`, plays nicely with Tailwind / Vuetify / any design system
+- **535 icons**, tree-shakable per chunk — one icon, one bundle entry
+- Ergonomic triggers: `animateOnHover`, `animateOnTap`, `animateOnView`
+- Composable `<AnimateIcon>` wrapper drives nested icons via provide/inject
+- Bind triggers to an ancestor with `triggerTarget="parent"` / `closest:button` — no markup refactor
+- **Nuxt module** with auto-imports — `<HeartAnimated />` works with no per-file imports
+- SSR-safe with hydration replay (no flash, no mismatch)
+- Full TypeScript types, native Motion loops, `currentColor` styling
 - Works standalone (`<Heart animateOnHover />`) or composed (`<AnimateIcon>` over anything)
 
 ## Contents
