@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 // One line, all three. Named imports shake — unused icons are dropped in prod.
-import { AnimateIcon, BetweenVerticalStart, Heart, Search } from '@respeak/lucide-motion-vue'
+import { AnimateIcon, AudioLines, BetweenVerticalStart, Heart, Search } from '@respeak/lucide-motion-vue'
 
 const playing = ref(false)
+const audioVariant = ref<'default' | 'alt'>('default')
 </script>
 
 <template>
@@ -95,7 +96,41 @@ const playing = ref(false)
         </v-card>
 
         <v-card class="pa-6 mb-4">
-          <h2 class="text-h6 mb-3">6. Button as trigger (<code>as="template"</code>)</h2>
+          <h2 class="text-h6 mb-3">
+            6. Multi-variant icon (different element graphs)
+          </h2>
+          <p class="text-caption mb-2">
+            <code>&lt;AudioLines&gt;</code> ships two variants whose silhouettes
+            diverge: <code>default</code> renders six animated lines (animate-ui),
+            <code>alt</code> renders four animated paths flanked by two static
+            caps (lucide-animated). The toggle below flips the active animation
+            via the <code>animation</code> prop — a single component, two real
+            silhouettes, no <code>&lt;AudioLines2&gt;</code> sibling.
+          </p>
+          <div class="d-flex align-center" style="gap: 24px">
+            <v-btn-toggle v-model="audioVariant" color="primary" mandatory density="comfortable">
+              <v-btn value="default">default</v-btn>
+              <v-btn value="alt">alt</v-btn>
+            </v-btn-toggle>
+            <AudioLines :animation="audioVariant" animateOnHover :size="48" />
+          </div>
+          <p class="text-caption mt-3 mb-0">
+            Both variants visible side-by-side (each persistently animating):
+          </p>
+          <div class="d-flex align-center mt-2" style="gap: 32px">
+            <div class="d-flex flex-column align-center" style="gap: 6px">
+              <AudioLines animation="default" animate :size="48" />
+              <code class="text-caption">default</code>
+            </div>
+            <div class="d-flex flex-column align-center" style="gap: 6px">
+              <AudioLines animation="alt" animate :size="48" />
+              <code class="text-caption">alt</code>
+            </div>
+          </div>
+        </v-card>
+
+        <v-card class="pa-6 mb-4">
+          <h2 class="text-h6 mb-3">7. Button as trigger (<code>as="template"</code>)</h2>
           <AnimateIcon animateOnHover as="template" v-slot="{ on }">
             <v-btn color="primary" v-on="on">
               <BetweenVerticalStart :size="20" class="mr-2" />

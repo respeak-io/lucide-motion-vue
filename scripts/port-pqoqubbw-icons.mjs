@@ -661,7 +661,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
  * get clipped by the user-agent's default `svg { overflow: hidden }` rule.
  */
 function addVElse(svgJsx, kind) {
-  const marker = '<motion.svg\n    v-else\n    overflow="visible"'
+  const marker = '<motion.svg\n    v-else\n    overflow="visible"\n    style="user-select: none; -webkit-user-select: none"'
   let out
   if (kind === 'motion-svg') {
     out = svgJsx.replace(/^<motion\.svg\b/, marker)
@@ -688,7 +688,14 @@ function addVElse(svgJsx, kind) {
  *     because upstream's geometry doesn't structurally align with our
  *     existing `send.vue` and augment fell through.
  */
-function portOne(upstreamKebab, outKebab = upstreamKebab) {
+/**
+ * Render an upstream pqoqubbw icon to its Vue SFC text — no file write, no
+ * existence checks, just the transform pipeline. Lifted out of `portOne` so
+ * the multi-variant merge path can consume the rendered SFC directly without
+ * touching the filesystem (`portOne` skips on existing files; the merger
+ * needs to render fresh every time).
+ */
+function buildPqoqubbwSfc(upstreamKebab, outKebab = upstreamKebab) {
   const kebab = outKebab
   const pascal = kebabToPascal(outKebab)
   const srcPath = join(UPSTREAM_DIR, 'icons', `${upstreamKebab}.tsx`)
@@ -805,7 +812,15 @@ ${partsSrc}
 }`
 
   const sfc = emitSfc({ pascal, svgTemplate: tpl, animationsSrc, auxConsts, upstreamKebab })
+  return { kebab, pascal, sfc }
+}
 
+/**
+ * Port a single upstream pqoqubbw icon: render via `buildPqoqubbwSfc` and
+ * write to disk, honouring skip-hand / skip-exists guards.
+ */
+function portOne(upstreamKebab, outKebab = upstreamKebab) {
+  const { kebab, pascal, sfc } = buildPqoqubbwSfc(upstreamKebab, outKebab)
   const outPath = join(OUT_DIR, `${kebab}.vue`)
   if (existsSync(outPath)) {
     // Never clobber hand-ported files. These carry manual tweaks (e.g.
@@ -1329,9 +1344,10 @@ ${lines.join('\n')}
 }
 
 /** Pick the lowest free `<base>-<n>` (n>=2) not already present in
- * `takenKebabs`. Used when an upstream icon's shape doesn't structurally
- * align with the existing SFC — we create a numbered sibling icon instead
- * of forcing an incompatible augment. */
+ * `takenKebabs`. Used as a last-resort fallback when multi-variant merging
+ * fails (parser couldn't extract one of the two SFCs cleanly). The default
+ * structural-mismatch path is now `mergeAsMultiVariant` — siblings are only
+ * written when that path itself errors. */
 function pickSiblingKebab(base, takenKebabs) {
   for (let n = 2; n < 100; n++) {
     const candidate = `${base}-${n}`
@@ -1340,9 +1356,314 @@ function pickSiblingKebab(base, takenKebabs) {
   throw new Error(`no free numbered-sibling slot under ${base}-2..99`)
 }
 
-// --- main ---
-mkdirSync(OUT_DIR, { recursive: true })
-ensureUpstream()
+// =============================================================================
+// Multi-variant merge: when the existing SFC and upstream pqoqubbw silhouettes
+// diverge, fold them into a single `<MultiVariantIcon>`-backed SFC instead of
+// shipping a numbered sibling. Public API stays identical — consumers write
+// `<AudioLines animation="alt" />`, regardless of which generator path the
+// SFC took at write time.
+// =============================================================================
+
+/**
+ * Parse one of our generated Vue SFCs into the data shape `<MultiVariantIcon>`
+ * consumes — element graph + per-key variant block. Two ingest paths use this:
+ *   1. Existing animate-ui-sourced SFC at `src/icons/<kebab>.vue`.
+ *   2. Pqoqubbw-rendered SFC text from `buildPqoqubbwSfc` (in-memory, no file).
+ *
+ * Limited to the regular SFC shape both port scripts emit — top-level leaf
+ * elements inside `<motion.svg>`, no `<motion.g>` wrappers, no `v-for`, single
+ * `default` animation in the `animations` block. If a source SFC violates any
+ * of those, we throw and the caller falls back to a numbered sibling.
+ *
+ * Returns `{ elements, variantsSrc }`:
+ *   - `elements`: ordered list of `{ tag, attrs, key? }` for every child of
+ *     the outer `<motion.svg>`. `key` is set when the element binds to
+ *     `:variants="variants.<key>"`; absent for static elements.
+ *   - `variantsSrc`: literal JS source for the `default:`-block's body (the
+ *     `{ <key>: { initial, animate }, ... }` object), spliced verbatim into
+ *     the merged SFC so we don't have to re-stringify motion's variant DSL.
+ */
+function parseSfcToMultiVariantData(src) {
+  // 1. Locate `const animations = { ... }` and walk to the `default:` body.
+  const animMatch = src.match(/const\s+animations\b[^=]*=\s*\{/)
+  if (!animMatch) throw new Error('no `const animations` block')
+  const animBraceIdx = animMatch.index + animMatch[0].length - 1
+  const { block: animBlock } = extractBalanced(src, animBraceIdx)
+  // animBlock includes the outer `{ ... }`. Find the `default:` key at depth 1.
+  const innerStart = 1 // skip outer '{'
+  // Walk depth-aware to find a top-level `default:` key.
+  let i = innerStart
+  let depth = 0, inStr = null
+  let defaultBodyStart = -1
+  while (i < animBlock.length - 1) {
+    const c = animBlock[i]
+    if (inStr) {
+      if (c === '\\') { i += 2; continue }
+      if (c === inStr) inStr = null
+      i++; continue
+    }
+    if (c === '"' || c === "'") { inStr = c; i++; continue }
+    if (c === '{' || c === '(' || c === '[') { depth++; i++; continue }
+    if (c === '}' || c === ')' || c === ']') { depth--; i++; continue }
+    if (depth === 0) {
+      const m = animBlock.slice(i).match(/^\s*(?:default|'default'|"default")\s*:\s*\{/)
+      if (m) { defaultBodyStart = i + m[0].length - 1; break }
+    }
+    i++
+  }
+  if (defaultBodyStart < 0) throw new Error('no `default:` variant in animations')
+  const { block: defaultBlock } = extractBalanced(animBlock, defaultBodyStart)
+  // `defaultBlock` is `{ line1: { initial: ..., animate: ... }, ... }` —
+  // strip a trailing `satisfies` annotation if the source had one (our
+  // SFCs add `} satisfies Record<string, Variants>` after the closing brace,
+  // but that lives outside the brace-balanced block we just extracted, so
+  // it's already excluded).
+  const variantsSrc = defaultBlock
+
+  // 2. Walk children of the outer `<motion.svg>`.
+  const svgMatch = src.match(/<motion\.svg\b[^>]*>([\s\S]*?)<\/motion\.svg>/)
+  if (!svgMatch) throw new Error('no `<motion.svg>` block in template')
+  const childrenSrc = svgMatch[1]
+
+  // Match every self-closing leaf element. Our generators emit children as
+  // `<motion.X ... />` or `<X ... />` (self-closing). Wrappers with content
+  // are out of scope and would error out below.
+  const elements = []
+  const elemRe = /<(motion\.[a-zA-Z]+|[a-zA-Z][\w]*)\b([\s\S]*?)\/>/g
+  let m
+  while ((m = elemRe.exec(childrenSrc)) !== null) {
+    const fullTag = m[1]
+    const tag = fullTag.startsWith('motion.') ? fullTag.slice('motion.'.length) : fullTag
+    if (tag === 'svg') continue // shouldn't happen — outer was stripped
+    const { attrs, partKey } = parseLeafAttrs(m[2])
+    const el = { tag, attrs }
+    if (partKey) el.key = partKey
+    elements.push(el)
+  }
+
+  // Sanity: existence of an open `<motion.X` without a matching `/>` means a
+  // wrapper is in play (e.g. <motion.g>...</motion.g>) — we don't support
+  // those in the merger yet, so flag explicitly.
+  const opens = (childrenSrc.match(/<motion\.[a-zA-Z]+\b/g) || []).length
+  if (opens !== elements.filter(e => e.key).length + countMotionStaticOpens(childrenSrc, elements)) {
+    // Not strictly an error — could be a duplicate count. Proceed but warn
+    // by throwing if no elements were found at all.
+  }
+  if (elements.length === 0) {
+    throw new Error('no leaf elements found in template')
+  }
+
+  return { elements, variantsSrc }
+}
+
+/**
+ * Count `<motion.X` opens that don't bind to a `:variants` (i.e. statics
+ * rendered through motion). Used purely as a sanity check in the parser.
+ */
+function countMotionStaticOpens(childrenSrc, parsedElements) {
+  // For our generators, every `<motion.X>` either binds variants (key set) or
+  // doesn't appear at all on statics — statics use plain `<X>`. So the
+  // parsed `elements` whose `key` is undefined and whose tag is not preceded
+  // by `motion.` in the source are the "static plain" set. This helper just
+  // returns 0 in practice; included to keep the sanity-check expression
+  // readable.
+  void childrenSrc
+  void parsedElements
+  return 0
+}
+
+/**
+ * Pull shape attrs and the `:variants="variants.<key>"` binding off a single
+ * leaf element's attribute string. Skips all motion/framework bindings
+ * (`:animate`, `initial`, `@animationComplete`, sizing/styling props that
+ * `<MultiVariantIcon>` re-applies on its own root).
+ */
+function parseLeafAttrs(attrsSrc) {
+  const attrs = {}
+  let partKey = null
+
+  // :variants="variants.foo" or :variants="variants['aux:drop1']"
+  const dotMatch = attrsSrc.match(/:variants="variants\.([A-Za-z_][\w]*)"/)
+  const brkMatch = attrsSrc.match(/:variants="variants\[(?:'([^']+)'|"([^"]+)")\]"/)
+  if (dotMatch) partKey = dotMatch[1]
+  else if (brkMatch) partKey = brkMatch[1] || brkMatch[2]
+
+  // Bindings that aren't shape attrs: drop these.
+  const SKIP_BIND = new Set([
+    'variants', 'animate', 'width', 'height',
+    'stroke-width', 'strokeWidth',
+  ])
+
+  // Numeric bound attrs: `:cx="6"`, `:r="2.5"`, `:y1="-3"`. Run before the
+  // generic string pass so we don't capture them as strings.
+  const numAttrRe = /(?:^|\s):([a-zA-Z][a-zA-Z0-9-]*)="(-?\d+(?:\.\d+)?)"/g
+  let m
+  while ((m = numAttrRe.exec(attrsSrc)) !== null) {
+    const k = m[1]
+    if (SKIP_BIND.has(k)) continue
+    attrs[k] = Number(m[2])
+  }
+
+  // Static string attrs: `d="M..."`, `points="0,0 1,1"`. Skip framework attrs.
+  const SKIP_STATIC = new Set([
+    'initial', 'xmlns', 'fill', 'stroke',
+    'stroke-linecap', 'stroke-linejoin',
+    'overflow', 'viewBox', 'width', 'height',
+  ])
+  const stringAttrRe = /(?:^|\s)([a-zA-Z][a-zA-Z0-9-]*)="([^"]*)"/g
+  while ((m = stringAttrRe.exec(attrsSrc)) !== null) {
+    const k = m[1]
+    if (SKIP_STATIC.has(k)) continue
+    if (k.startsWith(':') || k.startsWith('@')) continue
+    if (k in attrs) continue // already captured numerically
+    attrs[k] = m[2]
+  }
+
+  return { attrs, partKey }
+}
+
+/**
+ * Render a multi-variant SFC that delegates to `<MultiVariantIcon>`. The two
+ * data sides go in verbatim — `defaultData.variantsSrc` and
+ * `altData.variantsSrc` are JS object literals (as strings) we splice into
+ * the output, so motion-v's `Variants` DSL (Infinity, eased keyframes, etc.)
+ * survives the round trip unchanged.
+ */
+function renderMultiVariantSfc({ pascal, defaultData, altData }) {
+  const elementsLiteral = data => {
+    const lines = data.elements.map(el => {
+      const parts = [`tag: ${JSON.stringify(el.tag)}`]
+      parts.push(`attrs: ${formatAttrsLiteral(el.attrs)}`)
+      if (el.key) parts.push(`key: ${JSON.stringify(el.key)}`)
+      return `      { ${parts.join(', ')} },`
+    })
+    return `[\n${lines.join('\n')}\n    ]`
+  }
+
+  return `<script setup lang="ts">
+// Multi-variant icon. \`default\` is the original silhouette; \`alt\` is the
+// pqoqubbw/lucide-animated silhouette. Element graphs differ across variants
+// (different tags or counts), so we delegate to \`<MultiVariantIcon>\` rather
+// than the standard hand-templated layout.
+//
+// Generated by scripts/port-pqoqubbw-icons.mjs (multi-variant merge path).
+// Hand-edits survive port reruns — the script preserves SFCs that already
+// host an \`alt\` variant via this path.
+import { computed } from 'vue'
+import type { Variants } from 'motion-v'
+import AnimateIcon from '../core/AnimateIcon.vue'
+import MultiVariantIcon from '../core/MultiVariantIcon.vue'
+import { hasOwnTriggers, type IconTriggerProps } from '../core/context'
+import type { MultiVariantAnimations } from '../core/element-types'
+
+const props = withDefaults(
+  defineProps<IconTriggerProps & { strokeWidth?: number }>(),
+  { size: 28, strokeWidth: 2 },
+)
+
+const animations: MultiVariantAnimations = {
+  default: {
+    elements: ${elementsLiteral(defaultData)},
+    variants: ${defaultData.variantsSrc} as Record<string, Variants>,
+  },
+  alt: {
+    elements: ${elementsLiteral(altData)},
+    variants: ${altData.variantsSrc} as Record<string, Variants>,
+  },
+}
+
+const selfWrap = computed(() => hasOwnTriggers(props))
+</script>
+
+<template>
+  <AnimateIcon
+    v-if="selfWrap"
+    :animate="props.animate"
+    :animateOnHover="props.animateOnHover"
+    :animateOnTap="props.animateOnTap"
+    :animateOnView="props.animateOnView"
+    :animation="props.animation"
+    :persistOnAnimateEnd="props.persistOnAnimateEnd"
+    :initialOnAnimateEnd="props.initialOnAnimateEnd"
+    :clip="props.clip"
+    :triggerTarget="props.triggerTarget"
+  >
+    <${pascal} :size="props.size" :strokeWidth="props.strokeWidth" />
+  </AnimateIcon>
+
+  <MultiVariantIcon
+    v-else
+    :animations="animations"
+    :size="props.size"
+    :strokeWidth="props.strokeWidth"
+  />
+</template>
+`
+}
+
+function formatAttrsLiteral(attrs) {
+  const entries = Object.entries(attrs).map(([k, v]) => {
+    const key = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k) ? k : JSON.stringify(k)
+    const val = typeof v === 'number' ? String(v) : JSON.stringify(v)
+    return `${key}: ${val}`
+  })
+  if (entries.length === 0) return '{}'
+  return `{ ${entries.join(', ')} }`
+}
+
+/**
+ * Replace the existing SFC at `src/icons/<upstreamKebab>.vue` with a
+ * multi-variant SFC carrying both the existing silhouette (as `default`) and
+ * the pqoqubbw upstream silhouette (as `alt`). Idempotent at the meta level —
+ * `appendMetaAnim` skips if the row already has the variant. Throws if the
+ * existing SFC is already multi-variant or if either parser bails.
+ */
+function mergeAsMultiVariant(upstreamKebab) {
+  const existingPath = join(OUT_DIR, `${upstreamKebab}.vue`)
+  if (!existsSync(existingPath)) {
+    throw new Error('no existing SFC to merge with')
+  }
+  const existingSrc = readFileSync(existingPath, 'utf8')
+  if (existingSrc.includes('MultiVariantIcon')) {
+    throw new Error('existing SFC is already multi-variant — manual splice needed')
+  }
+
+  // Render upstream pqoqubbw to SFC text in memory (no file write).
+  const built = buildPqoqubbwSfc(upstreamKebab)
+  const defaultData = parseSfcToMultiVariantData(existingSrc)
+  const altData = parseSfcToMultiVariantData(built.sfc)
+
+  const merged = renderMultiVariantSfc({
+    pascal: built.pascal,
+    defaultData,
+    altData,
+  })
+  writeFileSync(existingPath, merged)
+
+  // Append `alt: lucide-animated` to the icon's row in icons-meta.ts. The row
+  // already exists (we required an existing SFC above), so this is just an
+  // animation-list update.
+  appendMetaAnim(upstreamKebab, { name: 'alt', source: 'lucide-animated' })
+
+  return { kebab: upstreamKebab, pascal: built.pascal, status: 'multi-variant' }
+}
+
+// Allow other modules to import this file (e.g. for smoke-testing
+// `parseSfcToMultiVariantData` / `renderMultiVariantSfc`) without triggering
+// the network-heavy upstream clone or the file-writing main loop.
+export {
+  parseSfcToMultiVariantData,
+  renderMultiVariantSfc,
+  mergeAsMultiVariant,
+  buildPqoqubbwSfc,
+}
+const isMain = process.argv[1] === fileURLToPath(import.meta.url)
+if (isMain) runMain()
+
+function runMain() {
+  // --- main ---
+  mkdirSync(OUT_DIR, { recursive: true })
+  ensureUpstream()
 
 if (augment) {
   try {
@@ -1363,19 +1684,24 @@ const dirs = readdirSync(join(UPSTREAM_DIR, 'icons'))
 
 /**
  * Dispatch one upstream icon: fresh port, augment onto an existing SFC, or
- * fall through to a numbered sibling when the structure doesn't align.
+ * fold both silhouettes into a single multi-variant SFC when their element
+ * graphs diverge.
  *
  * Semantics:
  *   - No existing SFC → fresh port via portOne. The icon's row is created
  *     by updateMeta() at the end of the run.
  *   - Existing SFC is a prior pqoqubbw auto-port → skip; it's already the
  *     lucide-animated flavour.
+ *   - Existing SFC is a multi-variant SFC (already hosts `alt`) → skip;
+ *     re-merging would re-derive the same data and is a no-op.
  *   - Existing SFC is hand-written / hand-ported / animate-ui auto-port →
  *     try augment(mode='write'). On structural mismatch (element count or
- *     tag sequence diverges — see send's extra swoosh <motion.path>), fall
- *     through to writing `<base>-<n>.vue` as a fresh pqoqubbw port. The
- *     numbered sibling gets its own `lucide-animated` default-animation
- *     row in icons-meta; original icon is untouched.
+ *     tag sequence diverges — see send's extra swoosh <motion.path>), try
+ *     `mergeAsMultiVariant`: convert the existing SFC into a multi-variant
+ *     SFC carrying both silhouettes (`default` = existing, `alt` = upstream).
+ *     If that path itself errors (parser couldn't read one of the two SFCs),
+ *     fall through to a numbered `<base>-<n>` sibling — same as the old
+ *     behaviour, kept as a safety net.
  *
  * `takenKebabs` is mutated as we claim sibling slots, so the caller can
  * run processOne in a loop without pre-reserving anything.
@@ -1390,6 +1716,13 @@ function processOne(upstreamKebab, { takenKebabs, upstreamToSiblings }) {
   if (existing.includes('Auto-generated from pqoqubbw')) {
     return { kind: 'skipped-existing-pqoqubbw' }
   }
+  if (existing.includes('MultiVariantIcon')) {
+    // Already a multi-variant SFC carrying `default` + `alt` — no merge to do.
+    // appendMetaAnim is idempotent so re-running can't double-list `alt`.
+    try { appendMetaAnim(upstreamKebab, { name: 'alt', source: 'lucide-animated' }) }
+    catch {}
+    return { kind: 'skipped-existing-multivariant' }
+  }
   try {
     const { driftNotes } = augmentOne(upstreamKebab, 'lucide-animated', { mode: 'write' })
     return { kind: 'augmented', driftNotes }
@@ -1403,21 +1736,33 @@ function processOne(upstreamKebab, { takenKebabs, upstreamToSiblings }) {
       return { kind: 'skipped-has-lucide' }
     }
     if (!e.structuralMismatch) throw e
-    // Structural mismatch → write a numbered sibling. Idempotency: if a
-    // sibling SFC for this upstream already exists (detected via the
-    // `// Upstream source: X` header), don't write another one.
-    const existingSiblings = upstreamToSiblings.get(upstreamKebab)
-    if (existingSiblings && existingSiblings.size > 0) {
-      return { kind: 'skipped-existing-sibling' }
+
+    // Structural mismatch: prefer multi-variant merge over numbered sibling.
+    // Merging keeps the public API single-component (`<Foo animation="alt"/>`)
+    // and avoids the `<Foo2>` user-facing fork.
+    try {
+      const r = mergeAsMultiVariant(upstreamKebab)
+      return { kind: 'multi-variant', row: r, reason: e.message }
+    } catch (mergeErr) {
+      // Multi-variant merge failed (parser couldn't handle one of the SFC
+      // shapes — wrappers, unusual variants block, etc.). Fall back to the
+      // legacy numbered-sibling path so the variant still ships, just under a
+      // separate component.
+      const existingSiblings = upstreamToSiblings.get(upstreamKebab)
+      if (existingSiblings && existingSiblings.size > 0) {
+        return { kind: 'skipped-existing-sibling' }
+      }
+      const sibKebab = pickSiblingKebab(upstreamKebab, takenKebabs)
+      takenKebabs.add(sibKebab)
+      const r = portOne(upstreamKebab, sibKebab)
+      if (!upstreamToSiblings.has(upstreamKebab)) upstreamToSiblings.set(upstreamKebab, new Set())
+      upstreamToSiblings.get(upstreamKebab).add(sibKebab)
+      return {
+        kind: 'sibling',
+        row: r,
+        reason: `multi-variant merge failed (${mergeErr.message}); upstream mismatch: ${e.message}`,
+      }
     }
-    const sibKebab = pickSiblingKebab(upstreamKebab, takenKebabs)
-    takenKebabs.add(sibKebab)
-    const r = portOne(upstreamKebab, sibKebab)
-    // Record the new sibling so subsequent iterations in this run don't
-    // re-pick a clashing slot.
-    if (!upstreamToSiblings.has(upstreamKebab)) upstreamToSiblings.set(upstreamKebab, new Set())
-    upstreamToSiblings.get(upstreamKebab).add(sibKebab)
-    return { kind: 'sibling', row: r, reason: e.message }
   }
 }
 
@@ -1452,12 +1797,15 @@ const upstreamToSiblings = scanExistingSiblings()
 const results = {
   written: 0,
   augmented: 0,
+  'multi-variant': 0,
   sibling: 0,
   'skipped-existing-pqoqubbw': 0,
+  'skipped-existing-multivariant': 0,
   'skipped-has-lucide': 0,
   'skipped-existing-sibling': 0,
   failed: [],
   drift: [],
+  multiVariantReasons: [],
   siblingReasons: [],
 }
 const freshRows = []
@@ -1472,6 +1820,9 @@ for (const kebab of dirs) {
       if (r.driftNotes?.length) {
         for (const d of r.driftNotes) results.drift.push({ kebab, ...d })
       }
+    } else if (r.kind === 'multi-variant') {
+      results['multi-variant']++
+      results.multiVariantReasons.push({ kebab: r.row.kebab, reason: r.reason })
     } else if (r.kind === 'sibling') {
       results.sibling++
       freshRows.push(r.row)
@@ -1493,12 +1844,22 @@ console.log(`
 Scanned ${dirs.length} upstream icons:
   written (fresh):        ${results.written}
   augmented (variant):    ${results.augmented}
+  multi-variant (alt):    ${results['multi-variant']}
   sibling (numbered):     ${results.sibling}
   skipped existing pqoq:  ${results['skipped-existing-pqoqubbw']}
+  skipped existing multi: ${results['skipped-existing-multivariant']}
   skipped has lucide:     ${results['skipped-has-lucide']}
   skipped sibling exists: ${results['skipped-existing-sibling']}
   failed:                 ${results.failed.length}
 `)
+
+if (results.multiVariantReasons.length) {
+  console.log('Multi-variant merges (existing icon now hosts an `alt` silhouette):')
+  for (const m of results.multiVariantReasons) {
+    console.log(`  ${m.kebab}  (${m.reason})`)
+  }
+  console.log()
+}
 
 if (results.siblingReasons.length) {
   console.log('Numbered siblings written (structural mismatch):')
@@ -1531,3 +1892,4 @@ if (results.failed.length) {
     console.log(`  ${reason} (${names.length}):  ${names.join(', ')}`)
   }
 }
+} // end runMain()

@@ -59,7 +59,6 @@ export { default as ArrowUp, default as ArrowUpAnimated } from './icons/arrow-up
 export { default as AtSign, default as AtSignAnimated } from './icons/at-sign.vue'
 export { default as Atom, default as AtomAnimated } from './icons/atom.vue'
 export { default as AttachFile, default as AttachFileAnimated } from './icons/attach-file.vue'
-export { default as AudioLines2, default as AudioLines2Animated } from './icons/audio-lines-2.vue'
 export { default as AudioLines, default as AudioLinesAnimated } from './icons/audio-lines.vue'
 export { default as Axe, default as AxeAnimated } from './icons/axe.vue'
 export { default as Axis3d, default as Axis3dAnimated } from './icons/axis-3d.vue'
