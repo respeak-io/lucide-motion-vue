@@ -98,6 +98,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
   <motion.svg
     v-else
     overflow="visible"
+    style="user-select: none; -webkit-user-select: none"
         :animate="current"
       @animationComplete="notifyComplete"
         fill="none"

@@ -661,7 +661,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
  * get clipped by the user-agent's default `svg { overflow: hidden }` rule.
  */
 function addVElse(svgJsx, kind) {
-  const marker = '<motion.svg\n    v-else\n    overflow="visible"\n    style="user-select: none; -webkit-user-select: none; outline: none"'
+  const marker = '<motion.svg\n    v-else\n    overflow="visible"\n    style="user-select: none; -webkit-user-select: none"'
   let out
   if (kind === 'motion-svg') {
     out = svgJsx.replace(/^<motion\.svg\b/, marker)

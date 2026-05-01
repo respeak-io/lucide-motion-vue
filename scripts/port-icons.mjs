@@ -242,7 +242,7 @@ function emitVueSfc({ pascal, needsPathClassName }, prelude, animationsBlock, js
   // user-agent's default `svg { overflow: hidden }` rule.
   const jsxWithVElse = jsx.replace(
     /^<motion\.svg\b/,
-    '<motion.svg\n    v-else\n    overflow="visible"',
+    '<motion.svg\n    v-else\n    overflow="visible"\n    style="user-select: none; -webkit-user-select: none"',
   )
 
   // Some upstream icons (e.g. fingerprint) apply `pathClassName` on the svg —

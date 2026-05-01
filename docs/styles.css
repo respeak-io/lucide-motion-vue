@@ -470,8 +470,6 @@ header.top .brand h1 {
   color: var(--fg);
   position: relative;
   overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
   transition:
     border-color 180ms var(--ease-smooth),
     transform 220ms var(--ease-smooth),
@@ -654,8 +652,6 @@ header.top .brand h1 {
   cursor: pointer;
   transition: background 120ms, color 120ms, border-color 120ms;
   flex-shrink: 0;
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 .icon-btn:hover {
@@ -1761,8 +1757,6 @@ header.top .brand h1 {
   align-items: center;
   justify-content: center;
   color: var(--fg);
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 .pg-stage-hint {

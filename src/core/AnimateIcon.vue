@@ -256,3 +256,24 @@ defineSlots<{
   />
   <ForwardedSlot v-else />
 </template>
+
+<!--
+  Global, intentionally un-scoped rule. motion-v's render output makes the
+  rendered <svg> and inner <motion.*> elements (path/line/rect/…) reachable
+  by document.activeElement — clicking an svg path inside a consumer's
+  <button> shifts focus to the path and Chrome paints its UA :focus outline
+  (5px system blue), which reads as an ugly "selection" highlight on the
+  icon. There's no semantic interaction on the icon itself — the consumer's
+  wrapping button is the real focusable. Suppress the UA outline on svg
+  child elements; `:where()` keeps specificity at 0 so any consumer rule
+  trivially overrides. Loaded once because every icon SFC imports
+  AnimateIcon for its selfWrap branch.
+-->
+<style>
+:where(svg) :where(path, line, rect, circle, polyline, polygon, ellipse, g):focus {
+  outline: none;
+}
+:where(svg):focus {
+  outline: none;
+}
+</style>
