@@ -1348,30 +1348,14 @@ function augmentOne(kebab, variantName, { mode = 'print' } = {}) {
     )
   }
 
-  // Shape-correspondence check: when upstream has strictly fewer paths
-  // than hand, those upstream paths should still correspond to some hand
-  // path — otherwise upstream is animating a different shape entirely
-  // (pqoqubbw's send has a single "dashed swoosh trail" motion.path that
-  // doesn't correspond to either of animate-ui's send-body paths). In
-  // that case positional pairing would apply swoosh-motion to the send
-  // body and the result looks wrong. Require every upstream path to
-  // d-prefix-match SOME hand path; otherwise fall through to sibling.
-  // Equal-count path pairs skip this check — drift across equally-populated
-  // sides is common (shrink's paths are reordered; check's move-to uses
-  // lowercase `m` vs uppercase `M`) but the correspondence is still there.
-  const normD12 = d => d.replace(/\s+/g, '').slice(0, 12)
-  if (upSplit.paths.length > 0 && upSplit.paths.length < handSplit.paths.length) {
-    const handPrefixes = new Set(handSplit.paths.filter(p => p.d).map(p => normD12(p.d)))
-    for (const u of upSplit.paths) {
-      if (!u.d) continue
-      if (!handPrefixes.has(normD12(u.d))) {
-        throw Object.assign(
-          new Error(`upstream path d="${u.d.slice(0, 32)}..." doesn't correspond to any existing path — likely a different shape`),
-          { structuralMismatch: true },
-        )
-      }
-    }
-  }
+  // Earlier versions threw a hard "structural mismatch" when upstream
+  // paths' d-prefixes didn't all match a hand path — protecting against
+  // shape mismatches like send's swoosh-vs-body. Pairing now does
+  // progressive relaxation (12/5/3/2-char prefixes) followed by skip-
+  // first positional, so the strict gate is gone. The remaining
+  // protection: send-style icons have already been converted to
+  // multi-variant SFCs, and `processOne` skips them via the
+  // `MultiVariantIcon` early return before augmentOne is even called.
 
   const assigned = new Map()
   const driftNotes = []
@@ -1429,41 +1413,49 @@ function augmentOne(kebab, variantName, { mode = 'print' } = {}) {
       pair(handSplit.paths[j], onlyUp, `fan path[${j}]`, j)
     }
   } else {
-    // d-based pairing: when both sides have literal `d` strings and every
-    // upstream path's d-prefix uniquely identifies a hand path, pair by
-    // shape rather than by position. cloud-rain-wind was the visible
-    // regression — pqoqubbw renders the cloud as a static <path> with no
-    // animation, leaving 3 upstream motion.paths for the rain. Hand has
-    // 4 motion.paths (cloud + 3 rain). Positional pairing assigned the
-    // rain animation to path1 (cloud) and dropped the third rain line.
-    // d-based pairing maps each upstream rain to its matching hand rain
-    // and leaves path1 empty — which is the upstream's intent. Falls
-    // back to positional when prefixes drift (lowercase `m` vs uppercase
-    // `M`) or `d` strings are missing, so existing pairs aren't disturbed.
+    // d-based pairing: when both sides have literal `d` strings, try to
+    // match upstream paths to hand paths by their d-prefix. Progressive
+    // relaxation handles cosmetic drift (pqoqubbw's plus-icon stems sit
+    // at y=8 vs animate-ui's y=7; users' arc-radius rounds 3.128 → 3.13
+    // in newer pqoqubbw exports). Width 12 is strict, 5 catches single-
+    // digit-coord drift, 3 catches first-coord drift but still relies on
+    // distinct first-letter+digit groupings. If any width yields a unique
+    // full mapping, use it. Otherwise fall back to skip-first positional
+    // (upstream[j] → hand[offset + j], where offset closes the count gap)
+    // — the convention is hand[0] is a "background" element pqoqubbw
+    // renders as a static <path>, so dropping that index aligns the
+    // animated paths. Equal-count cases use plain positional pairing.
     let dMap = null
     if (upSplit.paths.every(p => p.d) && handSplit.paths.every(p => p.d)) {
-      const handByPrefix = new Map()
-      let conflict = false
-      for (let i = 0; i < handSplit.paths.length; i++) {
-        const k = normD12(handSplit.paths[i].d)
-        if (handByPrefix.has(k)) { conflict = true; break }
-        handByPrefix.set(k, i)
-      }
-      if (!conflict) {
+      for (const N of [12, 5, 3, 2]) {
+        const norm = d => d.replace(/\s+/g, '').slice(0, N)
+        const handByPrefix = new Map()
+        let conflict = false
+        for (let i = 0; i < handSplit.paths.length; i++) {
+          const k = norm(handSplit.paths[i].d)
+          if (handByPrefix.has(k)) { conflict = true; break }
+          handByPrefix.set(k, i)
+        }
+        if (conflict) continue
         const candidate = new Map()
         let ok = true
         for (let j = 0; j < upSplit.paths.length; j++) {
-          const k = normD12(upSplit.paths[j].d)
+          const k = norm(upSplit.paths[j].d)
           const handIdx = handByPrefix.get(k)
           if (handIdx === undefined) { ok = false; break }
           candidate.set(j, handIdx)
         }
-        if (ok) dMap = candidate
+        if (ok) { dMap = candidate; break }
       }
     }
     if (dMap) {
       for (const [upIdx, handIdx] of dMap.entries()) {
         pair(handSplit.paths[handIdx], upSplit.paths[upIdx], `path[d-match→${handIdx}]`, handIdx)
+      }
+    } else if (upSplit.paths.length < handSplit.paths.length) {
+      const offset = handSplit.paths.length - upSplit.paths.length
+      for (let j = 0; j < upSplit.paths.length; j++) {
+        pair(handSplit.paths[offset + j], upSplit.paths[j], `path[skip-first→${offset + j}]`, offset + j)
       }
     } else {
       for (let i = 0; i < upSplit.paths.length; i++) {
