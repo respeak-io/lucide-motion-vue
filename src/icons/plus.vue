@@ -95,8 +95,10 @@ const animations: MultiVariantAnimations = {
   },
   alt: {
     elements: [
-      { tag: "path", attrs: { d: "M5 12h14" } },
-      { tag: "path", attrs: { d: "M12 5v14" } },
+      { tag: "g", attrs: {}, key: "path", children: [
+        { tag: "path", attrs: { d: "M5 12h14" } },
+        { tag: "path", attrs: { d: "M12 5v14" } },
+      ] },
     ],
     variants: {
     path: {

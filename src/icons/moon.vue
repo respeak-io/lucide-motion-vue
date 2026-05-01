@@ -70,7 +70,9 @@ const animations: MultiVariantAnimations = {
   },
   alt: {
     elements: [
-      { tag: "path", attrs: { d: "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" } },
+      { tag: "g", attrs: {}, key: "svg", children: [
+        { tag: "path", attrs: { d: "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" } },
+      ] },
     ],
     variants: {
     svg: {

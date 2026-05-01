@@ -1399,13 +1399,30 @@ function parseSfcToMultiVariantData(src) {
   }
 
   // 2. Walk children of the outer `<motion.svg>`.
-  const svgMatch = src.match(/<motion\.svg\b[^>]*>([\s\S]*?)<\/motion\.svg>/)
+  const svgMatch = src.match(/<motion\.svg\b([^>]*)>([\s\S]*?)<\/motion\.svg>/)
   if (!svgMatch) throw new Error('no `<motion.svg>` block in template')
-  const childrenSrc = svgMatch[1]
+  const rootAttrsSrc = svgMatch[1]
+  const childrenSrc = svgMatch[2]
 
-  const elements = parseTemplateChildren(childrenSrc)
+  let elements = parseTemplateChildren(childrenSrc)
   if (elements.length === 0) {
     throw new Error('no elements found in template')
+  }
+
+  // pqoqubbw's standard shape binds `:variants="variants.<key>"` directly on
+  // the outer `<motion.svg>` so the whole SVG (and every child via motion-v
+  // variant propagation) animates as one. `<MultiVariantIcon>`'s own root
+  // `<motion.svg>` is fixed (it doesn't take a variants prop), so we hoist
+  // the binding into a synthetic `<g>` wrapper around the children and
+  // route the variant key onto that group. Visually equivalent — `<g>` is
+  // invisible — and motion-v propagates from the keyed `<motion.g>` to its
+  // descendants identically.
+  const rootKeyMatch =
+    rootAttrsSrc.match(/:variants="variants\.([A-Za-z_][\w]*)"/) ||
+    rootAttrsSrc.match(/:variants="variants\[(?:'([^']+)'|"([^"]+)")\]"/)
+  if (rootKeyMatch) {
+    const rootKey = rootKeyMatch[1] || rootKeyMatch[2]
+    elements = [{ tag: 'g', attrs: {}, key: rootKey, children: elements }]
   }
 
   return { elements, animations }

@@ -190,15 +190,17 @@ const animations: MultiVariantAnimations = {
   },
   alt: {
     elements: [
-      { tag: "path", attrs: { d: "M12 6V2H8" } },
-      { tag: "path", attrs: { d: "M2 12h2" } },
-      { tag: "path", attrs: { d: "M20 12h2" } },
-      { tag: "path", attrs: { d: "M20 16a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" }, key: "path2" },
-      { tag: "path", attrs: { d: "M9 11v2" }, key: "path3" },
-      { tag: "path", attrs: { d: "M15 11v2" }, key: "path4" },
-      { tag: "circle", attrs: { cx: "10", cy: "18", r: "0.5" }, key: "path5" },
-      { tag: "circle", attrs: { cx: "12", cy: "18", r: "0.5" }, key: "path6" },
-      { tag: "circle", attrs: { cx: "14", cy: "18", r: "0.5" }, key: "path7" },
+      { tag: "g", attrs: {}, key: "path", children: [
+        { tag: "path", attrs: { d: "M12 6V2H8" } },
+        { tag: "path", attrs: { d: "M2 12h2" } },
+        { tag: "path", attrs: { d: "M20 12h2" } },
+        { tag: "path", attrs: { d: "M20 16a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" }, key: "path2" },
+        { tag: "path", attrs: { d: "M9 11v2" }, key: "path3" },
+        { tag: "path", attrs: { d: "M15 11v2" }, key: "path4" },
+        { tag: "circle", attrs: { cx: "10", cy: "18", r: "0.5" }, key: "path5" },
+        { tag: "circle", attrs: { cx: "12", cy: "18", r: "0.5" }, key: "path6" },
+        { tag: "circle", attrs: { cx: "14", cy: "18", r: "0.5" }, key: "path7" },
+      ] },
     ],
     variants: {
     path: {
