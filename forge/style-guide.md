@@ -181,6 +181,7 @@ Pick one. Don't set both — they can fight each other.
 - **Path morphing `d` between two paths with different anchor counts.** Motion-v will not interpolate them cleanly; you'll get a snap. If you want morphing, redesign the path so both states share the same point count.
 - **Animating `viewBox`.** Not supported.
 - **Gradient stroke or fill animation.** Requires `<defs>` and gradient stops the renderer doesn't emit.
+- **`translateX` / `translateY` on `<motion.rect>`.** motion-v Vue leaks the rect's SVG `x` / `y` attributes into the transform translation — `<rect x="8" y="8">` with variant `{ translateX: 0, translateY: 0 }` renders at `transform: translate(8, 8)` instead of `translate(0, 0)`, doubling the offset. Use plain `x` / `y` on rects instead (variant `{ x: 0, y: 0 }` resolves to a clean transform with no leakage). `translateX` / `translateY` works fine on `<path>`, `<line>`, `<circle>`, `<polygon>` — only rects (and `<image>`, which we don't ship) are affected.
 
 ### Looping behaviour
 - **One-shot** (default): set `transition: { duration, ease }`. The forge's preview UI auto-replays via SVG re-mount, so you do **not** need `repeat: Infinity` to make replay happen.
