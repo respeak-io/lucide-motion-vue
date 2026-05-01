@@ -120,10 +120,10 @@ const animations = {
   },
     },
     path2: {
-  initial: { d: "m12 5 7 7-7 7", translateX: 0 },
+  initial: { d: "m12 5 7 7-7 7", x: 0 },
   animate: {
     d: "m12 5 7 7-7 7",
-    translateX: [0, -3, 0],
+    x: [0, -3, 0],
     transition: {
       duration: 0.4,
     },

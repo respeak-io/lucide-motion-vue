@@ -45,19 +45,7 @@ const animations = {
     path4: rainAnimation,
   } satisfies Record<string, Variants>,
   'lucide-animated': {
-    path1: {
-  initial: {
-    opacity: 1,
-  },
-  animate: {
-    opacity: [1, 0.2, 1],
-    transition: {
-      duration: 1,
-      repeat: Number.POSITIVE_INFINITY,
-      ease: "easeInOut",
-    },
-  },
-    },
+    path1: {},
     group: {
   animate: {
     transition: {
@@ -91,7 +79,19 @@ const animations = {
     },
   },
     },
-    path4: {},
+    path4: {
+  initial: {
+    opacity: 1,
+  },
+  animate: {
+    opacity: [1, 0.2, 1],
+    transition: {
+      duration: 1,
+      repeat: Number.POSITIVE_INFINITY,
+      ease: "easeInOut",
+    },
+  },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 

@@ -79,8 +79,8 @@ const animations = {
   } satisfies Record<string, Variants>,
   'lucide-animated': {
     rect: {
-              initial: { translateY: 0, translateX: 0 },
-              animate: { translateY: -3, translateX: -3 },
+              initial: { y: 0, x: 0 },
+              animate: { y: -3, x: -3 },
     },
     path: {
               initial: { x: 0, y: 0 },

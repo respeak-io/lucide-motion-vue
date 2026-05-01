@@ -47,11 +47,11 @@ const animations = {
   } satisfies Record<string, Variants>,
   'lucide-animated': {
     path1: {
-              animate: { translateX: 0.5, translateY: 3, rotate: 72 },
+              animate: { x: 0.5, y: 3, rotate: 72 },
               initial: {
-                translateX: 0,
+                x: 0,
                 rotate: 0,
-                translateY: 0,
+                y: 0,
               },
     },
     path2: {},

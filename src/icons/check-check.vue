@@ -74,7 +74,7 @@ const animations = {
       opacity: { duration: 0.1 },
     },
   },
-  animate: (custom: number) => ({
+  animate: ((custom: number) => ({
     opacity: [0, 1],
     pathLength: [0, 1],
     scale: [0.5, 1],
@@ -83,7 +83,7 @@ const animations = {
       opacity: { duration: 0.1 },
       delay: 0.1 * custom,
     },
-  }),
+  }))(0),
     },
     path2: {
   initial: {
@@ -95,7 +95,7 @@ const animations = {
       opacity: { duration: 0.1 },
     },
   },
-  animate: (custom: number) => ({
+  animate: ((custom: number) => ({
     opacity: [0, 1],
     pathLength: [0, 1],
     scale: [0.5, 1],
@@ -104,7 +104,7 @@ const animations = {
       opacity: { duration: 0.1 },
       delay: 0.1 * custom,
     },
-  }),
+  }))(1),
     },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>

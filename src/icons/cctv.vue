@@ -68,7 +68,9 @@ const animations = {
     },
   },
     },
-    path1: {
+    path1: {},
+    path2: {},
+    path3: {
   initial: {
     opacity: 1,
   },
@@ -80,8 +82,6 @@ const animations = {
     },
   },
     },
-    path2: {},
-    path3: {},
     path4: {},
     path5: {},
   } satisfies Record<string, Variants>,

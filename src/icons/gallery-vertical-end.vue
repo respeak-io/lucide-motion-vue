@@ -130,7 +130,7 @@ const animations = {
   'lucide-animated': {
     path1: {
   initial: {
-    translateY: 0,
+    y: 0,
     opacity: 1,
     transition: {
       type: "tween",
@@ -139,7 +139,7 @@ const animations = {
     },
   },
   animate: ((i: number) => ({
-    translateY: [2 * i, 0],
+    y: [2 * i, 0],
     opacity: [0, 1],
     transition: {
       delay: 0.25 * (2 - i),
@@ -151,7 +151,7 @@ const animations = {
     },
     path2: {
   initial: {
-    translateY: 0,
+    y: 0,
     opacity: 1,
     transition: {
       type: "tween",
@@ -160,7 +160,7 @@ const animations = {
     },
   },
   animate: ((i: number) => ({
-    translateY: [2 * i, 0],
+    y: [2 * i, 0],
     opacity: [0, 1],
     transition: {
       delay: 0.25 * (2 - i),

@@ -74,7 +74,7 @@ const animations = {
     y: 0,
     opacity: 1,
   },
-  animate: (custom: number) => ({
+  animate: ((custom: number) => ({
     rotate: custom === 1 ? 45 : custom === 3 ? -45 : 0,
     y: custom === 1 ? 6 : custom === 3 ? -6 : 0,
     opacity: custom === 2 ? 0 : 1,
@@ -83,7 +83,7 @@ const animations = {
       stiffness: 260,
       damping: 20,
     },
-  }),
+  }))(1),
     },
     line2: {
   initial: {
@@ -91,7 +91,7 @@ const animations = {
     y: 0,
     opacity: 1,
   },
-  animate: (custom: number) => ({
+  animate: ((custom: number) => ({
     rotate: custom === 1 ? 45 : custom === 3 ? -45 : 0,
     y: custom === 1 ? 6 : custom === 3 ? -6 : 0,
     opacity: custom === 2 ? 0 : 1,
@@ -100,7 +100,7 @@ const animations = {
       stiffness: 260,
       damping: 20,
     },
-  }),
+  }))(2),
     },
     line3: {
   initial: {
@@ -108,7 +108,7 @@ const animations = {
     y: 0,
     opacity: 1,
   },
-  animate: (custom: number) => ({
+  animate: ((custom: number) => ({
     rotate: custom === 1 ? 45 : custom === 3 ? -45 : 0,
     y: custom === 1 ? 6 : custom === 3 ? -6 : 0,
     opacity: custom === 2 ? 0 : 1,
@@ -117,7 +117,7 @@ const animations = {
       stiffness: 260,
       damping: 20,
     },
-  }),
+  }))(3),
     },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>

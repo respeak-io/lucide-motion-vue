@@ -103,35 +103,35 @@ const animations = {
   } satisfies Record<string, Variants>,
   'lucide-animated': {
     line1: {
-              animate: { translateY: -4 },
+              animate: { y: -4 },
               initial: {
-                translateX: 0,
+                x: 0,
                 rotate: 0,
-                translateY: 0,
+                y: 0,
               },
     },
     line2: {
-              animate: { translateY: 4 },
+              animate: { y: 4 },
               initial: {
-                translateX: 0,
+                x: 0,
                 rotate: 0,
-                translateY: 0,
+                y: 0,
               },
     },
     line3: {
-              animate: { translateX: -4 },
+              animate: { x: -4 },
               initial: {
-                translateX: 0,
+                x: 0,
                 rotate: 0,
-                translateY: 0,
+                y: 0,
               },
     },
     line4: {
-              animate: { translateX: 4 },
+              animate: { x: 4 },
               initial: {
-                translateX: 0,
+                x: 0,
                 rotate: 0,
-                translateY: 0,
+                y: 0,
               },
     },
   } satisfies Record<string, Variants>,

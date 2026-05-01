@@ -38,7 +38,11 @@ const animations = {
     },
   } satisfies Record<string, Variants>,
   'lucide-animated': {
-    path1: {
+    path1: {},
+    path2: {},
+    path3: {},
+    path4: {},
+    path5: {
   initial: { opacity: 1 },
   animate: {
     opacity: [1, 0.4, 1],
@@ -49,10 +53,6 @@ const animations = {
     },
   },
     },
-    path2: {},
-    path3: {},
-    path4: {},
-    path5: {},
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 

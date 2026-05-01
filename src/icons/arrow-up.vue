@@ -111,19 +111,19 @@ const animations = {
   'lucide-animated': {
     group: {},
     path1: {
-  initial: { d: "m5 12 7-7 7 7", translateY: 0 },
+  initial: { d: "M12 19V5" },
   animate: {
-    d: "m5 12 7-7 7 7",
-    translateY: [0, 3, 0],
+    d: ["M12 19V5", "M12 19V10", "M12 19V5"],
     transition: {
       duration: 0.4,
     },
   },
     },
     path2: {
-  initial: { d: "M12 19V5" },
+  initial: { d: "m5 12 7-7 7 7", y: 0 },
   animate: {
-    d: ["M12 19V5", "M12 19V10", "M12 19V5"],
+    d: "m5 12 7-7 7 7",
+    y: [0, 3, 0],
     transition: {
       duration: 0.4,
     },

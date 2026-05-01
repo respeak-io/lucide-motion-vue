@@ -401,6 +401,18 @@ function variantStateKeys(body) {
  * Rename the top-level `normal:` state to `initial:` in a variants body.
  * Depth-aware so we only rewrite the state-level key, not nested object keys
  * that happen to be called `normal`.
+ *
+ * Also renames `translateX:` / `translateY:` → `x:` / `y:` regardless of
+ * depth. motion-v Vue resolves `x`/`y` motion props to a CSS transform
+ * translate (verified empirically: a `<motion.rect x="8" y="8">` with
+ * variant `{ x: 0, y: 0 }` renders with `transform: none`, the rect at
+ * its declared 8/8 position). The same rect with variant `{ translateX:
+ * 0, translateY: 0 }` renders with `transform: matrix(1,0,0,1,8,8)` —
+ * the rect's SVG x/y leak into the transform translation, doubling the
+ * offset and pushing the rect off-canvas (Copy's blocks-too-far-apart
+ * regression). pqoqubbw upstream uses `translateX`/`Y` because in
+ * motion/react those map to plain CSS transform deltas; our motion-v
+ * adapter normalises them to the equivalent that works on SVG primitives.
  */
 function renameNormalToInitial(body) {
   let out = ''
@@ -423,6 +435,16 @@ function renameNormalToInitial(body) {
         i += m[0].length
         continue
       }
+    }
+    // Rename translateX / translateY → x / y at any depth. The match must
+    // anchor on a token boundary so we don't rewrite a property called
+    // `myTranslateX` (none in upstream, but safer to be precise).
+    const tm = body.slice(i).match(/^translateX(\s*):/) || body.slice(i).match(/^translateY(\s*):/)
+    if (tm && (i === 0 || /[\s,{]/.test(body[i - 1]))) {
+      const axis = tm[0].startsWith('translateX') ? 'x' : 'y'
+      out += `${axis}${tm[1]}:`
+      i += tm[0].length
+      continue
     }
     out += c
     i++
@@ -1337,8 +1359,8 @@ function augmentOne(kebab, variantName, { mode = 'print' } = {}) {
   // Equal-count path pairs skip this check — drift across equally-populated
   // sides is common (shrink's paths are reordered; check's move-to uses
   // lowercase `m` vs uppercase `M`) but the correspondence is still there.
+  const normD12 = d => d.replace(/\s+/g, '').slice(0, 12)
   if (upSplit.paths.length > 0 && upSplit.paths.length < handSplit.paths.length) {
-    const normD12 = d => d.replace(/\s+/g, '').slice(0, 12)
     const handPrefixes = new Set(handSplit.paths.filter(p => p.d).map(p => normD12(p.d)))
     for (const u of upSplit.paths) {
       if (!u.d) continue
@@ -1407,8 +1429,46 @@ function augmentOne(kebab, variantName, { mode = 'print' } = {}) {
       pair(handSplit.paths[j], onlyUp, `fan path[${j}]`, j)
     }
   } else {
-    for (let i = 0; i < upSplit.paths.length; i++) {
-      pair(handSplit.paths[i], upSplit.paths[i], `path[${i}]`, i)
+    // d-based pairing: when both sides have literal `d` strings and every
+    // upstream path's d-prefix uniquely identifies a hand path, pair by
+    // shape rather than by position. cloud-rain-wind was the visible
+    // regression — pqoqubbw renders the cloud as a static <path> with no
+    // animation, leaving 3 upstream motion.paths for the rain. Hand has
+    // 4 motion.paths (cloud + 3 rain). Positional pairing assigned the
+    // rain animation to path1 (cloud) and dropped the third rain line.
+    // d-based pairing maps each upstream rain to its matching hand rain
+    // and leaves path1 empty — which is the upstream's intent. Falls
+    // back to positional when prefixes drift (lowercase `m` vs uppercase
+    // `M`) or `d` strings are missing, so existing pairs aren't disturbed.
+    let dMap = null
+    if (upSplit.paths.every(p => p.d) && handSplit.paths.every(p => p.d)) {
+      const handByPrefix = new Map()
+      let conflict = false
+      for (let i = 0; i < handSplit.paths.length; i++) {
+        const k = normD12(handSplit.paths[i].d)
+        if (handByPrefix.has(k)) { conflict = true; break }
+        handByPrefix.set(k, i)
+      }
+      if (!conflict) {
+        const candidate = new Map()
+        let ok = true
+        for (let j = 0; j < upSplit.paths.length; j++) {
+          const k = normD12(upSplit.paths[j].d)
+          const handIdx = handByPrefix.get(k)
+          if (handIdx === undefined) { ok = false; break }
+          candidate.set(j, handIdx)
+        }
+        if (ok) dMap = candidate
+      }
+    }
+    if (dMap) {
+      for (const [upIdx, handIdx] of dMap.entries()) {
+        pair(handSplit.paths[handIdx], upSplit.paths[upIdx], `path[d-match→${handIdx}]`, handIdx)
+      }
+    } else {
+      for (let i = 0; i < upSplit.paths.length; i++) {
+        pair(handSplit.paths[i], upSplit.paths[i], `path[${i}]`, i)
+      }
     }
   }
   // Unpaired hand parts (extra containers or extra paths) stay out of

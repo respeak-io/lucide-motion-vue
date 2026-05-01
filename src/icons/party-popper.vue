@@ -114,31 +114,31 @@ const animations = {
   'lucide-animated': {
     group: {},
     path1: {
-  initial: { translateX: 0, translateY: 0 },
+  initial: { x: 0, y: 0 },
   animate: {
-    translateX: [-1.5, 0],
-    translateY: [1.5, 0],
+    x: [-1.5, 0],
+    y: [1.5, 0],
     transition: {
       velocity: 0.3,
     },
   },
     },
     path2: {
-  initial: { translateX: 0, translateY: 0 },
+  initial: { x: 0, y: 0 },
   animate: {
-    translateX: [-1.5, 0],
-    translateY: [1.5, 0],
+    x: [-1.5, 0],
+    y: [1.5, 0],
     transition: {
       velocity: 0.3,
     },
   },
     },
     path3: {
-  initial: { opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+  initial: { opacity: 1, scale: 1, x: 0, y: 0 },
   animate: {
     opacity: [0, 1],
-    translateX: [-5, 0],
-    translateY: [5, 0],
+    x: [-5, 0],
+    y: [5, 0],
     scale: [0.5, 0.8, 1, 1.1, 1],
     transition: {
       duration: 0.7,
@@ -146,11 +146,11 @@ const animations = {
   },
     },
     path4: {
-  initial: { opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+  initial: { opacity: 1, scale: 1, x: 0, y: 0 },
   animate: {
     opacity: [0, 1],
-    translateX: [-5, 0],
-    translateY: [5, 0],
+    x: [-5, 0],
+    y: [5, 0],
     scale: [0.5, 0.8, 1, 1.1, 1],
     transition: {
       duration: 0.7,
@@ -158,11 +158,11 @@ const animations = {
   },
     },
     path5: {
-  initial: { opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+  initial: { opacity: 1, scale: 1, x: 0, y: 0 },
   animate: {
     opacity: [0, 1],
-    translateX: [-5, 0],
-    translateY: [5, 0],
+    x: [-5, 0],
+    y: [5, 0],
     scale: [0.5, 0.8, 1, 1.1, 1],
     transition: {
       duration: 0.7,
@@ -170,11 +170,11 @@ const animations = {
   },
     },
     path6: {
-  initial: { opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+  initial: { opacity: 1, scale: 1, x: 0, y: 0 },
   animate: {
     opacity: [0, 1],
-    translateX: [-5, 0],
-    translateY: [5, 0],
+    x: [-5, 0],
+    y: [5, 0],
     scale: [0.5, 0.8, 1, 1.1, 1],
     transition: {
       duration: 0.7,
@@ -186,15 +186,15 @@ const animations = {
     opacity: 1,
     pathLength: 1,
     scale: 1,
-    translateX: 0,
-    translateY: 0,
+    x: 0,
+    y: 0,
   },
   animate: {
     opacity: [0, 1],
     scale: [0.3, 0.8, 1, 1.1, 1],
     pathLength: [0, 0.5, 1],
-    translateX: [-5, 0],
-    translateY: [5, 0],
+    x: [-5, 0],
+    y: [5, 0],
     transition: {
       duration: 0.7,
       velocity: 0.3,
@@ -206,15 +206,15 @@ const animations = {
     opacity: 1,
     pathLength: 1,
     scale: 1,
-    translateX: 0,
-    translateY: 0,
+    x: 0,
+    y: 0,
   },
   animate: {
     opacity: [0, 1],
     scale: [0.3, 0.8, 1, 1.1, 1],
     pathLength: [0, 0.5, 1],
-    translateX: [-5, 0],
-    translateY: [5, 0],
+    x: [-5, 0],
+    y: [5, 0],
     transition: {
       duration: 0.7,
       velocity: 0.3,
@@ -226,15 +226,15 @@ const animations = {
     opacity: 1,
     pathLength: 1,
     scale: 1,
-    translateX: 0,
-    translateY: 0,
+    x: 0,
+    y: 0,
   },
   animate: {
     opacity: [0, 1],
     scale: [0.3, 0.8, 1, 1.1, 1],
     pathLength: [0, 0.5, 1],
-    translateX: [-5, 0],
-    translateY: [5, 0],
+    x: [-5, 0],
+    y: [5, 0],
     transition: {
       duration: 0.7,
       velocity: 0.3,

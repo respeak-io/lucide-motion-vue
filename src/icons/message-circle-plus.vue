@@ -61,23 +61,7 @@ const animations = {
   } satisfies Record<string, Variants>,
   'lucide-animated': {
     group: {},
-    path1: {
-  initial: {
-    pathLength: 1,
-    opacity: 1,
-    transition: {
-      duration: 0.3,
-    },
-  },
-  animate: {
-    pathLength: [0, 1],
-    opacity: [0, 1],
-    transition: {
-      pathLength: { duration: 0.4, ease: "easeInOut" },
-      opacity: { duration: 0.4, ease: "easeInOut" },
-    },
-  },
-    },
+    path1: {},
     path2: {
   initial: {
     pathLength: 1,
@@ -95,7 +79,23 @@ const animations = {
     },
   },
     },
-    path3: {},
+    path3: {
+  initial: {
+    pathLength: 1,
+    opacity: 1,
+    transition: {
+      duration: 0.3,
+    },
+  },
+  animate: {
+    pathLength: [0, 1],
+    opacity: [0, 1],
+    transition: {
+      pathLength: { duration: 0.4, ease: "easeInOut" },
+      opacity: { duration: 0.4, ease: "easeInOut" },
+    },
+  },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 

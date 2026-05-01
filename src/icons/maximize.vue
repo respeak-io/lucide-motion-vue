@@ -115,20 +115,20 @@ const animations = {
   } satisfies Record<string, Variants>,
   'lucide-animated': {
     path1: {
-              initial: { translateX: "0%", translateY: "0%" },
-              animate: { translateX: "-2px", translateY: "-2px" },
+              initial: { x: "0%", y: "0%" },
+              animate: { x: "-2px", y: "-2px" },
     },
     path2: {
-              initial: { translateX: "0%", translateY: "0%" },
-              animate: { translateX: "2px", translateY: "-2px" },
+              initial: { x: "0%", y: "0%" },
+              animate: { x: "2px", y: "-2px" },
     },
     path3: {
-              initial: { translateX: "0%", translateY: "0%" },
-              animate: { translateX: "-2px", translateY: "2px" },
+              initial: { x: "0%", y: "0%" },
+              animate: { x: "-2px", y: "2px" },
     },
     path4: {
-              initial: { translateX: "0%", translateY: "0%" },
-              animate: { translateX: "2px", translateY: "2px" },
+              initial: { x: "0%", y: "0%" },
+              animate: { x: "2px", y: "2px" },
     },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
