@@ -9,6 +9,81 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 _Nothing yet._
 
+## [0.6.1] - 2026-05-01
+
+### Added
+- **`<MultiVariantIcon>` supports nested element trees.** Wrapper tags
+  (`tag: 'g'` with `children`) render via a self-recursive
+  `<MultiVariantElement>`, so animate-ui icons that drive a single
+  variant transform on a whole sub-tree (Send's plane-takeoff group is
+  the canonical example) can fold both silhouettes into one SFC.
+- **v-for expansion in the Forge multi-variant merger.** pqoqubbw
+  upstream renders staggered animations as `[paths].map(...)`; the
+  merger now expands the collapsed `<motion.path v-for=...>` into N
+  concrete elements with per-iteration variant keys and IIFE-baked
+  custom values. `Sun` and `SunMedium`'s `alt` variants now render the
+  full element graph instead of one empty path.
+- Per-icon variant audit scripts:
+  `scripts/audit-multi-variant-merges.mjs` re-renders every merged
+  pair from git history and byte-compares to disk;
+  `scripts/audit-lucide-animated.mjs` flags un-fanned dynamic bodies,
+  unbaked function variants, `translateX/Y` leftovers, and all-empty
+  variants. `scripts/check-new-icons.mjs` lists upstream additions
+  from animate-ui and pqoqubbw not yet ported.
+
+### Fixed
+- **Forge augment bakes function-form variants per hand path.**
+  pqoqubbw's `[paths].map((d, index) => <motion.path custom={index+1}
+  variants={SHARED} />)` collapsed to one upstream path with a
+  function variant; old augment assigned that body to `path1` only
+  and left `path2..pathN` empty, and even `path1`'s function ran with
+  `i = undefined` because the hand template has no v-for to forward
+  `:custom`. New behaviour fans the body across all hand paths and
+  pre-invokes the arrow function with each path's index via IIFE.
+  Affected: `MessageCircleDashed`, `MessageSquareDashed`, `SunDim`,
+  `GalleryHorizontalEnd`, `GalleryVerticalEnd` lucide-animated
+  variants now animate.
+- **Forge augment pairs by d-prefix (with progressive relaxation).**
+  Hand and upstream path orders / counts can drift when pqoqubbw
+  renders the "background" element as a static `<path>` (cloud-rain-
+  wind: 4 hand paths vs 3 upstream motion.paths). Previous positional
+  pairing applied the rain animation to the cloud and dropped one
+  rain line. New behaviour matches by 12/5/3/2-char d-prefix and
+  falls back to skip-first positional when upstream has fewer paths.
+  Recovered: `CloudRainWind`, `CloudRain`, `CloudLightning`,
+  `Blocks`, `ChartLine`, `Expand`, `MessageSquarePlus`,
+  `MessageSquareX`, `Users`.
+- **Forge rewrites `translateX` / `translateY` to `x` / `y` in
+  variants.** motion-v Vue treats `translateX/Y` on a `<motion.rect>`
+  by leaking the rect's SVG `x`/`y` attributes into the transform
+  translation — `Copy`'s blocks rendered with `transform:
+  translate(8, 8)` at rest, doubling the offset. The `x`/`y` motion
+  props resolve to a clean transform-translate without leakage.
+- **Forge multi-variant merger preserves the root `:variants`
+  binding** from `<motion.svg>` (via a synthetic `<g>` wrapper) so
+  `BotMessageSquare`'s head wobble propagates to the alt variant.
+- **Forge multi-variant merger preserves geometry attrs** (`width`,
+  `height`, `stroke-width` overrides) on merged child elements;
+  `Bot`'s body rectangle was the visible regression.
+- **`<AnimateIcon>` suppresses UA focus outlines** on the icon SVG
+  and inner paths so click/tap doesn't render a stray dotted ring.
+
+### Changed
+- **14 numbered sibling pairs collapsed into multi-variant SFCs**:
+  `Cast`/`Cast2`, `MessageCircle`/`MessageCircle2`,
+  `MessageSquare`/`MessageSquare2`, `Sun`/`Sun2`,
+  `SunMedium`/`SunMedium2`, `Terminal`/`Terminal2`,
+  `Send`/`Send2`, `Bot`/`Bot2`, `BotMessageSquare`/`BotMessageSquare2`,
+  `Compass`/`Compass2`, `MessageCircleMore`/`MessageCircleMore2`,
+  `MessageSquareMore`/`MessageSquareMore2`, `Moon`/`Moon2`,
+  `Plus`/`Plus2`, `X`/`X2`, `AudioLines`/`AudioLines2`. Public API
+  unchanged: `<Sun animation="alt" />` works the same way. The
+  numbered sibling exports (`<Sun2>` etc.) are removed.
+
+### Docs
+- Playground: in-context preview, denser icon grid, `ColorPicker`
+  relocated into the search toolbar, sticky offsets tightened.
+
 ## [0.6.0] - 2026-05-01
 
 ### Added
