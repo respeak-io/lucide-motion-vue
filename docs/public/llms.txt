@@ -1,8 +1,10 @@
 # @respeak/lucide-motion-vue
 
-> Lucide icons animated with Motion for Vue. 535 tree-shakable Vue 3 SFCs
-> with ergonomic triggers (hover/tap/view/programmatic), a composable
-> `<AnimateIcon>` wrapper, and a Nuxt module for auto-imports. Peer deps:
+> Lucide icons animated with Motion for Vue. 523 tree-shakable Vue 3 SFCs
+> across 815 named animation variants, with ergonomic triggers
+> (hover/tap/view/programmatic), a composable `<AnimateIcon>` wrapper,
+> a `<MultiVariantIcon>` core for icons whose variants ship divergent
+> element graphs, and a Nuxt module for auto-imports. Peer deps:
 > `vue ^3.3`, `motion-v ^2`.
 
 ## Install

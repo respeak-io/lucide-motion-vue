@@ -7,13 +7,14 @@
 [![types](https://img.shields.io/npm/types/@respeak/lucide-motion-vue.svg)](https://www.npmjs.com/package/@respeak/lucide-motion-vue)
 [![live demo](https://img.shields.io/badge/demo-live-7c3aed.svg)](https://respeak-io.github.io/lucide-motion-vue/)
 
-**The largest animated icon library for Vue 3.** 535 Lucide icons, drop-in and tree-shakeable, with a live gallery, variant switcher, and copy-paste snippets.
+**The largest animated icon library for Vue 3.** 523 Lucide icons across 815 named animation variants — drop-in and tree-shakeable, with a live gallery, variant switcher, and copy-paste snippets.
 
 [![Animated icon preview](./docs/hero.gif)](https://respeak-io.github.io/lucide-motion-vue/)
 
 **▶︎ [Live gallery + docs](https://respeak-io.github.io/lucide-motion-vue/)** — hover any icon to preview; click for variants, props, and copy-paste snippets. Built on [Motion for Vue](https://motion.dev/docs/vue), ships a Nuxt module, SSR-safe, fully tree-shakable per icon.
 
-- **535 icons**, tree-shakable per chunk — one icon, one bundle entry
+- **523 icons / 815 named variants**, tree-shakable per chunk — one icon, one bundle entry
+- **Multiple animations per icon.** `<Heart animation="fill" />`, `<Sun animation="alt" />`, `<Link2 animation="apart" />`. Variants can carry materially different motion *and* different element graphs under one component name (e.g. `Sun`'s `default` is the animate-ui sunburst, `alt` is the lucide-animated minimal silhouette — same `<Sun>` import).
 - Ergonomic triggers: `animateOnHover`, `animateOnTap`, `animateOnView`
 - Composable `<AnimateIcon>` wrapper drives nested icons via provide/inject
 - Bind triggers to an ancestor with `triggerTarget="parent"` / `closest:button` — no markup refactor
@@ -21,6 +22,7 @@
 - SSR-safe with hydration replay (no flash, no mismatch)
 - Full TypeScript types, native Motion loops, `currentColor` styling
 - Works standalone (`<Heart animateOnHover />`) or composed (`<AnimateIcon>` over anything)
+- **Forge** maintainer tool ([see below](#the-forge--design-new-variants)) generates AI-designed icon animations for review — `pnpm forge`
 
 ## Contents
 
@@ -36,6 +38,7 @@
 - [TypeScript](#typescript)
 - [Accessibility](#accessibility)
 - [Docs site](#docs-site)
+- [The Forge — design new variants](#the-forge--design-new-variants)
 - [Changelog](./CHANGELOG.md)
 - [Contributing / regenerating icons](#contributing--regenerating-icons)
 - [License](#license)
@@ -316,6 +319,13 @@ iconsMeta[0]
 // | 'hand-written') for attribution — see ATTRIBUTIONS.md.
 iconsMeta.find(m => m.pascal === 'Heart')?.animations.map(a => a.name)
 // → ['default', 'fill']
+
+// Some icons ship variants with materially different element graphs
+// (different path splits, different animated parts) — `Sun`, `AudioLines`,
+// `Cast`, `MessageSquareMore` and a dozen others. The component name and
+// the `iconsMeta` row stay the same; only the `animation` prop changes:
+iconsMeta.find(m => m.pascal === 'Sun')?.animations
+// → [{ name: 'default', source: 'animate-ui' }, { name: 'alt', source: 'lucide-animated' }]
 ```
 
 ## TypeScript
@@ -371,6 +381,22 @@ Set `VITE_DOCS_BASE=/repo-name/` when building for a GitHub Pages subpath deploy
 ### For AI agents
 
 A concise machine-readable API reference is served at `/llms.txt` (and checked into `docs/public/llms.txt`). Point your agent's system prompt or repo rules at it — see the docs site's "For AI agents" section for a drop-in Cursor rule and prompt template.
+
+## The Forge — design new variants
+
+Need an animation that doesn't ship out of the box? The repo includes a maintainer-grade Vite app that hands an icon to Claude (Sonnet 4.6 or Opus 4.7) and gets back **3 distinct animation proposals as strict JSON**, side-by-side previewable, exportable as a hand-written SFC into `src/icons/`.
+
+```bash
+ANTHROPIC_API_KEY=… pnpm forge       # → http://localhost:5173
+```
+
+What it does:
+
+- **Generate** — pick a Lucide icon (or paste an SVG), optionally enable spawning auxiliary elements (sparks, ripples, motion trails) and silhouette morphing. The model returns 3 proposals titled like `"Wand draws stars"`, each with a 1-2-sentence rationale.
+- **Review** — live preview each proposal in the same UI; tweak the source SVG and re-run; reject and re-prompt if none clear the bar.
+- **Ship** — export the chosen proposal as a hand-written SFC matching the library's standard shape. The generated file gets a `// Hand-written` sentinel so the codemod scripts skip it on re-run.
+
+The full design-quality bar (multi-element motion, semantic mapping, phase variation, magnitude floors, what won't render) lives in [`forge/style-guide.md`](./forge/style-guide.md). It's hand-authored for LLM consumption — point your own agent workflow at it if you'd rather DIY.
 
 ## Contributing / regenerating icons
 
