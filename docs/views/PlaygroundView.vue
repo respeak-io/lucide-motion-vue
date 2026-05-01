@@ -7,6 +7,7 @@ import {
   type IconMeta,
 } from '@respeak/lucide-motion-vue'
 import CodeBlock from '../components/CodeBlock.vue'
+import IconContextPreview from '../components/IconContextPreview.vue'
 import PlaygroundPicker from '../components/PlaygroundPicker.vue'
 import PlaygroundControls, {
   type TriggerProp,
@@ -187,6 +188,11 @@ defineExpose({
           <template v-else-if="trigger === 'animateOnView'">replays on scroll into view</template>
           <template v-else>use replay →</template>
         </span>
+      </div>
+
+      <div class="pg-context">
+        <div class="section-label">In context</div>
+        <IconContextPreview :meta="selected" :variant-name="variant.name" />
       </div>
 
       <CodeBlock :code="snippet" lang="vue" />

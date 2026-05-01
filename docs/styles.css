@@ -451,7 +451,7 @@ header.top .brand h1 {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
   gap: 10px;
 }
 
@@ -993,7 +993,7 @@ header.top .brand h1 {
 .color-pop {
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  left: 0;
   z-index: 20;
   min-width: 196px;
   padding: 12px;
@@ -1493,10 +1493,9 @@ header.top .brand h1 {
 @media (max-width: 520px) {
   .app { padding: 20px 16px 40px; }
   .brand h1 { font-size: 1.4rem; }
-  .grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+  .grid { gap: 8px; }
   .drawer { width: 100%; }
   .body { padding: 18px; }
-  .color-pop { right: auto; left: 0; }
   .docs-intro h1 { font-size: 1.6rem; }
   .doc-section h2 { font-size: 1.2rem; }
 }
@@ -1757,6 +1756,12 @@ header.top .brand h1 {
   align-items: center;
   justify-content: center;
   color: var(--fg);
+}
+
+.pg-context {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .pg-stage-hint {
