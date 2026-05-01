@@ -1384,67 +1384,19 @@ function pickSiblingKebab(base, takenKebabs) {
  *     the merged SFC so we don't have to re-stringify motion's variant DSL.
  */
 function parseSfcToMultiVariantData(src) {
-  // 1. Locate `const animations = { ... }` and walk to the `default:` body.
+  // 1. Locate `const animations = { ... }` and walk every top-level entry.
+  // We capture each entry's name + value-expression so the merger can
+  // preserve `blink`, `wink`, `pulse`, `default-loop`, etc. alongside
+  // `default`. Hand-templated SFCs use one element graph for all variants;
+  // only the per-variant `variants` block changes.
   const animMatch = src.match(/const\s+animations\b[^=]*=\s*\{/)
   if (!animMatch) throw new Error('no `const animations` block')
   const animBraceIdx = animMatch.index + animMatch[0].length - 1
   const { block: animBlock } = extractBalanced(src, animBraceIdx)
-  // animBlock includes the outer `{ ... }`. Find the `default:` key at depth 1.
-  // Capture the entire value expression that follows `default:` — could be a
-  // plain object literal `{ ... }`, an IIFE `(() => { ... })()` (cast / sun
-  // build their variants lazily), a `{ ... } satisfies Record<...>` literal,
-  // or any other expression. We walk depth-aware over `{}`, `()`, `[]` and
-  // strings, terminating at the top-level `,` or `}` of the outer animations
-  // block.
-  const innerStart = 1 // skip outer '{'
-  let i = innerStart
-  let depth = 0, inStr = null
-  let valueStart = -1
-  while (i < animBlock.length - 1) {
-    const c = animBlock[i]
-    if (inStr) {
-      if (c === '\\') { i += 2; continue }
-      if (c === inStr) inStr = null
-      i++; continue
-    }
-    if (c === '"' || c === "'") { inStr = c; i++; continue }
-    if (c === '{' || c === '(' || c === '[') { depth++; i++; continue }
-    if (c === '}' || c === ')' || c === ']') { depth--; i++; continue }
-    if (depth === 0) {
-      const m = animBlock.slice(i).match(/^\s*(?:default|'default'|"default")\s*:\s*/)
-      if (m) { valueStart = i + m[0].length; break }
-    }
-    i++
+  const animations = walkAnimationsBlock(animBlock)
+  if (animations.length === 0) {
+    throw new Error('no animation entries found in animations block')
   }
-  if (valueStart < 0) throw new Error('no `default:` variant in animations')
-
-  // Walk forward from `valueStart` to find the end of the expression: the
-  // first top-level `,` or `}` we see.
-  let j = valueStart
-  depth = 0
-  inStr = null
-  while (j < animBlock.length) {
-    const c = animBlock[j]
-    if (inStr) {
-      if (c === '\\') { j += 2; continue }
-      if (c === inStr) inStr = null
-      j++; continue
-    }
-    if (c === '"' || c === "'") { inStr = c; j++; continue }
-    if (c === '{' || c === '(' || c === '[') { depth++; j++; continue }
-    if (c === '}' || c === ')' || c === ']') {
-      if (depth === 0) break // hit the outer animations-block close
-      depth--; j++; continue
-    }
-    if (depth === 0 && c === ',') break
-    j++
-  }
-  // Strip trailing whitespace and any ` satisfies <Type>` annotation — the
-  // renderer will re-attach an `as Record<string, Variants>` cast around the
-  // value. Embedding `… satisfies Record<…> as Record<…>` would be a double
-  // annotation that vue-tsc parses but is noisy.
-  let variantsSrc = animBlock.slice(valueStart, j).trim()
-  variantsSrc = variantsSrc.replace(/\s+satisfies\s+[^,]+$/s, '').trim()
 
   // 2. Walk children of the outer `<motion.svg>`.
   const svgMatch = src.match(/<motion\.svg\b[^>]*>([\s\S]*?)<\/motion\.svg>/)
@@ -1456,7 +1408,71 @@ function parseSfcToMultiVariantData(src) {
     throw new Error('no elements found in template')
   }
 
-  return { elements, variantsSrc }
+  return { elements, animations }
+}
+
+/**
+ * Given the outer `{ ... }` block of `const animations = { ... }`, return
+ * an ordered list of `{ name, variantsSrc }` for every top-level entry.
+ *
+ * Names can be unquoted identifiers (`default`, `blink`) or quoted strings
+ * (`'default-loop'`, `'lucide-animated'`). Values can be plain object
+ * literals, IIFEs (`(() => { … })()` — cast / sun), or any expression
+ * terminated by a top-level `,` or `}`. A trailing ` satisfies <Type>` is
+ * stripped from each value before the renderer re-attaches an
+ * `as Record<string, Variants>` cast.
+ */
+function walkAnimationsBlock(animBlock) {
+  const out = []
+  // Skip outer `{` and trailing `}`.
+  let i = 1
+  let depth = 0
+  let inStr = null
+  while (i < animBlock.length - 1) {
+    const c = animBlock[i]
+    if (inStr) {
+      if (c === '\\') { i += 2; continue }
+      if (c === inStr) inStr = null
+      i++; continue
+    }
+    if (c === '"' || c === "'") { inStr = c; i++; continue }
+    if (c === '{' || c === '(' || c === '[') { depth++; i++; continue }
+    if (c === '}' || c === ')' || c === ']') { depth--; i++; continue }
+    if (depth !== 0) { i++; continue }
+    // At depth 0 inside the outer braces. Try to match a `<name>:` opener.
+    const keyMatch = animBlock.slice(i).match(
+      /^\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][\w-]*))\s*:\s*/,
+    )
+    if (!keyMatch) { i++; continue }
+    const name = keyMatch[1] || keyMatch[2] || keyMatch[3]
+    const valueStart = i + keyMatch[0].length
+
+    // Walk forward from `valueStart` to the next top-level `,` or `}`.
+    let j = valueStart
+    let vDepth = 0
+    let vStr = null
+    while (j < animBlock.length) {
+      const cc = animBlock[j]
+      if (vStr) {
+        if (cc === '\\') { j += 2; continue }
+        if (cc === vStr) vStr = null
+        j++; continue
+      }
+      if (cc === '"' || cc === "'") { vStr = cc; j++; continue }
+      if (cc === '{' || cc === '(' || cc === '[') { vDepth++; j++; continue }
+      if (cc === '}' || cc === ')' || cc === ']') {
+        if (vDepth === 0) break // outer animations-block close
+        vDepth--; j++; continue
+      }
+      if (vDepth === 0 && cc === ',') break
+      j++
+    }
+    let variantsSrc = animBlock.slice(valueStart, j).trim()
+    variantsSrc = variantsSrc.replace(/\s+satisfies\s+[^,]+$/s, '').trim()
+    out.push({ name, variantsSrc })
+    i = j + 1 // skip past the `,` (or stop if we hit the closing `}`)
+  }
+  return out
 }
 
 /**
@@ -1621,14 +1637,46 @@ function parseLeafAttrs(attrsSrc) {
  * the output, so motion-v's `Variants` DSL (Infinity, eased keyframes, etc.)
  * survives the round trip unchanged.
  */
-function renderMultiVariantSfc({ pascal, defaultData, altData }) {
-  const elementsLiteral = data => formatElementArrayLiteral(data.elements, 6)
+function renderMultiVariantSfc({ pascal, baseData, altData, altName = 'alt' }) {
+  // Sanity: alt SFC always has just one entry called `default` (pqoqubbw
+  // ports never emit named variants beyond `default`). Pull that one out
+  // and rename it to `altName` ('alt' by default) on the way into the
+  // merged SFC so consumers write `<Foo animation="alt" />`.
+  const altEntry =
+    altData.animations.find(a => a.name === 'default') ?? altData.animations[0]
+  if (!altEntry) throw new Error('alt SFC has no animations')
+
+  // Refuse merge if the base already has a variant named `altName` —
+  // overwriting it silently would lose user-facing surface. Caller can
+  // pass a different `altName` to disambiguate.
+  if (baseData.animations.some(a => a.name === altName)) {
+    throw new Error(`base SFC already has a '${altName}' variant — pick a different alt name`)
+  }
+
+  const elementsLiteralBase = formatElementArrayLiteral(baseData.elements, 6)
+  const elementsLiteralAlt = formatElementArrayLiteral(altData.elements, 6)
+  const animationBlocks = []
+  for (const { name, variantsSrc } of baseData.animations) {
+    animationBlocks.push(
+      `  ${jsKey(name)}: {\n` +
+      `    elements: ${elementsLiteralBase},\n` +
+      `    variants: ${variantsSrc} as Record<string, Variants>,\n` +
+      `  },`,
+    )
+  }
+  animationBlocks.push(
+    `  ${jsKey(altName)}: {\n` +
+    `    elements: ${elementsLiteralAlt},\n` +
+    `    variants: ${altEntry.variantsSrc} as Record<string, Variants>,\n` +
+    `  },`,
+  )
 
   return `<script setup lang="ts">
-// Multi-variant icon. \`default\` is the original silhouette; \`alt\` is the
-// pqoqubbw/lucide-animated silhouette. Element graphs differ across variants
-// (different tags or counts), so we delegate to \`<MultiVariantIcon>\` rather
-// than the standard hand-templated layout.
+// Multi-variant icon. The original animate-ui / hand-written silhouette ships
+// as \`default\` (plus any extra named animations the base SFC carried —
+// \`blink\`, \`wink\`, \`pulse\`, etc.); the pqoqubbw/lucide-animated silhouette
+// ships as \`alt\`. Element graphs differ across variants, so we delegate to
+// \`<MultiVariantIcon>\` rather than the standard hand-templated layout.
 //
 // Generated by scripts/port-pqoqubbw-icons.mjs (multi-variant merge path).
 // Hand-edits survive port reruns — the script preserves SFCs that already
@@ -1646,14 +1694,7 @@ const props = withDefaults(
 )
 
 const animations: MultiVariantAnimations = {
-  default: {
-    elements: ${elementsLiteral(defaultData)},
-    variants: ${defaultData.variantsSrc} as Record<string, Variants>,
-  },
-  alt: {
-    elements: ${elementsLiteral(altData)},
-    variants: ${altData.variantsSrc} as Record<string, Variants>,
-  },
+${animationBlocks.join('\n')}
 }
 
 const selfWrap = computed(() => hasOwnTriggers(props))
@@ -1693,6 +1734,16 @@ function formatAttrsLiteral(attrs) {
   })
   if (entries.length === 0) return '{}'
   return `{ ${entries.join(', ')} }`
+}
+
+/**
+ * Render a JS object key. Bare identifier when valid (`default`, `pulse`),
+ * single-quoted string otherwise (`'default-loop'`, `'lucide-animated'`).
+ */
+function jsKey(name) {
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)
+    ? name
+    : `'${name.replace(/'/g, "\\'")}'`
 }
 
 /**
@@ -1750,19 +1801,19 @@ function mergeAsMultiVariant(upstreamKebab) {
 
   // Render upstream pqoqubbw to SFC text in memory (no file write).
   const built = buildPqoqubbwSfc(upstreamKebab)
-  const defaultData = parseSfcToMultiVariantData(existingSrc)
+  const baseData = parseSfcToMultiVariantData(existingSrc)
   const altData = parseSfcToMultiVariantData(built.sfc)
 
   const merged = renderMultiVariantSfc({
     pascal: built.pascal,
-    defaultData,
+    baseData,
     altData,
   })
   writeFileSync(existingPath, merged)
 
   // Append `alt: lucide-animated` to the icon's row in icons-meta.ts. The row
   // already exists (we required an existing SFC above), so this is just an
-  // animation-list update.
+  // animation-list update. Existing base animations stay listed unchanged.
   appendMetaAnim(upstreamKebab, { name: 'alt', source: 'lucide-animated' })
 
   return { kebab: upstreamKebab, pascal: built.pascal, status: 'multi-variant' }
