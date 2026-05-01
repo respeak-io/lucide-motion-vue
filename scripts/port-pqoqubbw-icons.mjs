@@ -661,7 +661,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
  * get clipped by the user-agent's default `svg { overflow: hidden }` rule.
  */
 function addVElse(svgJsx, kind) {
-  const marker = '<motion.svg\n    v-else\n    overflow="visible"\n    style="user-select: none; -webkit-user-select: none"'
+  const marker = '<motion.svg\n    v-else\n    overflow="visible"\n    pointer-events="bounding-box"\n    style="user-select: none; -webkit-user-select: none"'
   let out
   if (kind === 'motion-svg') {
     out = svgJsx.replace(/^<motion\.svg\b/, marker)
@@ -1390,11 +1390,16 @@ function parseSfcToMultiVariantData(src) {
   const animBraceIdx = animMatch.index + animMatch[0].length - 1
   const { block: animBlock } = extractBalanced(src, animBraceIdx)
   // animBlock includes the outer `{ ... }`. Find the `default:` key at depth 1.
+  // Capture the entire value expression that follows `default:` — could be a
+  // plain object literal `{ ... }`, an IIFE `(() => { ... })()` (cast / sun
+  // build their variants lazily), a `{ ... } satisfies Record<...>` literal,
+  // or any other expression. We walk depth-aware over `{}`, `()`, `[]` and
+  // strings, terminating at the top-level `,` or `}` of the outer animations
+  // block.
   const innerStart = 1 // skip outer '{'
-  // Walk depth-aware to find a top-level `default:` key.
   let i = innerStart
   let depth = 0, inStr = null
-  let defaultBodyStart = -1
+  let valueStart = -1
   while (i < animBlock.length - 1) {
     const c = animBlock[i]
     if (inStr) {
@@ -1406,19 +1411,40 @@ function parseSfcToMultiVariantData(src) {
     if (c === '{' || c === '(' || c === '[') { depth++; i++; continue }
     if (c === '}' || c === ')' || c === ']') { depth--; i++; continue }
     if (depth === 0) {
-      const m = animBlock.slice(i).match(/^\s*(?:default|'default'|"default")\s*:\s*\{/)
-      if (m) { defaultBodyStart = i + m[0].length - 1; break }
+      const m = animBlock.slice(i).match(/^\s*(?:default|'default'|"default")\s*:\s*/)
+      if (m) { valueStart = i + m[0].length; break }
     }
     i++
   }
-  if (defaultBodyStart < 0) throw new Error('no `default:` variant in animations')
-  const { block: defaultBlock } = extractBalanced(animBlock, defaultBodyStart)
-  // `defaultBlock` is `{ line1: { initial: ..., animate: ... }, ... }` —
-  // strip a trailing `satisfies` annotation if the source had one (our
-  // SFCs add `} satisfies Record<string, Variants>` after the closing brace,
-  // but that lives outside the brace-balanced block we just extracted, so
-  // it's already excluded).
-  const variantsSrc = defaultBlock
+  if (valueStart < 0) throw new Error('no `default:` variant in animations')
+
+  // Walk forward from `valueStart` to find the end of the expression: the
+  // first top-level `,` or `}` we see.
+  let j = valueStart
+  depth = 0
+  inStr = null
+  while (j < animBlock.length) {
+    const c = animBlock[j]
+    if (inStr) {
+      if (c === '\\') { j += 2; continue }
+      if (c === inStr) inStr = null
+      j++; continue
+    }
+    if (c === '"' || c === "'") { inStr = c; j++; continue }
+    if (c === '{' || c === '(' || c === '[') { depth++; j++; continue }
+    if (c === '}' || c === ')' || c === ']') {
+      if (depth === 0) break // hit the outer animations-block close
+      depth--; j++; continue
+    }
+    if (depth === 0 && c === ',') break
+    j++
+  }
+  // Strip trailing whitespace and any ` satisfies <Type>` annotation — the
+  // renderer will re-attach an `as Record<string, Variants>` cast around the
+  // value. Embedding `… satisfies Record<…> as Record<…>` would be a double
+  // annotation that vue-tsc parses but is noisy.
+  let variantsSrc = animBlock.slice(valueStart, j).trim()
+  variantsSrc = variantsSrc.replace(/\s+satisfies\s+[^,]+$/s, '').trim()
 
   // 2. Walk children of the outer `<motion.svg>`.
   const svgMatch = src.match(/<motion\.svg\b[^>]*>([\s\S]*?)<\/motion\.svg>/)
@@ -1428,48 +1454,38 @@ function parseSfcToMultiVariantData(src) {
   // Match every self-closing leaf element. Our generators emit children as
   // `<motion.X ... />` or `<X ... />` (self-closing). Wrappers with content
   // are out of scope and would error out below.
+  //
+  // Reject wrapper elements before they corrupt the parse. Our generators
+  // emit every leaf as `<X ... />` (self-closing), so any open tag without
+  // a matching `/>` (e.g. `<motion.g ...>...</motion.g>` driving variants
+  // through group propagation) is something the current merger can't
+  // represent in `MultiVariantAnimations` data. Bail with a clear error so
+  // the caller falls back to keeping the sibling pair.
+  for (const m of childrenSrc.matchAll(/<(motion\.[a-zA-Z]+|[a-zA-Z][\w]*)\b([^>]*)>/g)) {
+    const fullTag = m[1]
+    const tag = fullTag.startsWith('motion.') ? fullTag.slice('motion.'.length) : fullTag
+    if (tag === 'svg') continue
+    if (m[2].trimEnd().endsWith('/')) continue
+    throw new Error(`wrapper element <${fullTag}> not supported by merger`)
+  }
+
   const elements = []
   const elemRe = /<(motion\.[a-zA-Z]+|[a-zA-Z][\w]*)\b([\s\S]*?)\/>/g
   let m
   while ((m = elemRe.exec(childrenSrc)) !== null) {
     const fullTag = m[1]
     const tag = fullTag.startsWith('motion.') ? fullTag.slice('motion.'.length) : fullTag
-    if (tag === 'svg') continue // shouldn't happen — outer was stripped
+    if (tag === 'svg') continue
     const { attrs, partKey } = parseLeafAttrs(m[2])
     const el = { tag, attrs }
     if (partKey) el.key = partKey
     elements.push(el)
-  }
-
-  // Sanity: existence of an open `<motion.X` without a matching `/>` means a
-  // wrapper is in play (e.g. <motion.g>...</motion.g>) — we don't support
-  // those in the merger yet, so flag explicitly.
-  const opens = (childrenSrc.match(/<motion\.[a-zA-Z]+\b/g) || []).length
-  if (opens !== elements.filter(e => e.key).length + countMotionStaticOpens(childrenSrc, elements)) {
-    // Not strictly an error — could be a duplicate count. Proceed but warn
-    // by throwing if no elements were found at all.
   }
   if (elements.length === 0) {
     throw new Error('no leaf elements found in template')
   }
 
   return { elements, variantsSrc }
-}
-
-/**
- * Count `<motion.X` opens that don't bind to a `:variants` (i.e. statics
- * rendered through motion). Used purely as a sanity check in the parser.
- */
-function countMotionStaticOpens(childrenSrc, parsedElements) {
-  // For our generators, every `<motion.X>` either binds variants (key set) or
-  // doesn't appear at all on statics — statics use plain `<X>`. So the
-  // parsed `elements` whose `key` is undefined and whose tag is not preceded
-  // by `motion.` in the source are the "static plain" set. This helper just
-  // returns 0 in practice; included to keep the sanity-check expression
-  // readable.
-  void childrenSrc
-  void parsedElements
-  return 0
 }
 
 /**
