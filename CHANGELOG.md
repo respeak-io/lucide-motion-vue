@@ -9,6 +9,32 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 _Nothing yet._
 
+## [0.6.0] - 2026-05-01
+
+### Added
+- **`<MultiVariantIcon>` core component** (`src/core/MultiVariantIcon.vue`).
+  Lets one icon component ship variants whose **element graphs diverge** —
+  not just per-variant timings/keyframes on a shared silhouette. Previously
+  the only way to ship two animations whose path splits differed was a
+  numbered sibling (`<Bell2 />`); now a single `<Bell animation="alt" />`
+  can drive both, with `<MultiVariantIcon>` swapping the active animation's
+  element list at runtime. The consumer-facing API is unchanged
+  (`<Bell animation="alt" />`); whether the SFC uses the standard
+  hand-templated layout or delegates to `<MultiVariantIcon>` is an
+  implementation detail.
+- New public types: `SvgElement`, `SvgTag`, `AnimationDef`,
+  `MultiVariantAnimations` (`src/core/element-types.ts`). These describe the
+  data structure consumed by `<MultiVariantIcon>` and are intended for SFC
+  writers (Forge, custom porters); typical app code never touches them.
+- New icons via the Forge maintainer tool: `HeartPulse`, `Siren`,
+  `Umbrella`, `WandSparkles`. Each has a `default` `hand-written` variant.
+
+### Fixed
+- **Forge SFC writer escapes non-identifier element keys.** Aux-element keys
+  like `aux:drop1` previously produced `variants."aux:drop1"` (template
+  syntax error) instead of `variants['aux:drop1']`. Existing icons with the
+  bug have been patched in this release.
+
 ## [0.5.0] - 2026-04-26
 
 ### Fixed

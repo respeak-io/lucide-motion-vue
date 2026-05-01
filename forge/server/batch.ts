@@ -37,8 +37,8 @@ import {
   findExistingIcon,
   writeIconSfc,
   writeMultiVariantSfc,
+  writeMultiVariantIconSfc,
   areProposalsMergeCompatible,
-  type WriteResult,
 } from './sfc-writer'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -434,35 +434,37 @@ async function writeRowSelections(
     }
   }
 
-  // Incompatible: numbered standalone files.
-  const targets = picks.map((proposal, i) => ({
-    proposal,
-    name: i === 0 ? iconName : `${iconName}-${i + 1}`,
-  }))
-  // Conflict scan up front so we can short-circuit cleanly.
-  for (const t of targets) {
-    const existing = await findExistingIcon(t.name)
-    if (existing) {
-      return {
-        rowIndex,
-        iconName,
-        outcome: {
-          kind: 'conflict',
-          existingFile: existing.filePath,
-          existingVariants: existing.variants,
-        },
-      }
+  // Incompatible silhouettes: still merge via the runtime <MultiVariantIcon>
+  // core component. Same public API for consumers — `<Bell animation="alt"/>`
+  // — but the SFC delegates rendering to MultiVariantIcon, which switches
+  // element graphs on `animation` change.
+  const existing = await findExistingIcon(iconName)
+  if (existing) {
+    return {
+      rowIndex,
+      iconName,
+      outcome: {
+        kind: 'conflict',
+        existingFile: existing.filePath,
+        existingVariants: existing.variants,
+      },
     }
   }
-  const written: WriteResult[] = []
-  for (const t of targets) written.push(await writeIconSfc(t.name, t.proposal))
+  const variantNames = generateVariantNames(picks.length)
+  const named = picks.map((proposal, i) => ({
+    name: variantNames[i],
+    proposal,
+  }))
+  const out = await writeMultiVariantIconSfc(iconName, named)
   return {
     rowIndex,
     iconName,
     outcome: {
       kind: 'written',
-      files: written.map(w => ({ filePath: w.filePath, variants: ['default'] })),
-      merged: false,
+      files: [{ filePath: out.filePath, variants: variantNames }],
+      // `merged: true` because the user-facing result *is* one merged icon —
+      // they just don't get the efficient hand-templated layout.
+      merged: true,
     },
   }
 }

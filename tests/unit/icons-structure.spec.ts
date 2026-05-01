@@ -24,22 +24,35 @@ describe('icons — structural shape', () => {
     expect(src).toMatch(/<script\s+setup\s+lang="ts">/)
     expect(src).toContain('</script>')
 
-    // Core imports the consumer-facing API depends on.
-    expect(src).toMatch(/from ['"]motion-v['"]/)
+    // Both layouts share the trigger-prop surface and self-wrap branch.
     expect(src).toMatch(/import AnimateIcon from ['"]\.\.\/core\/AnimateIcon\.vue['"]/)
-    expect(src).toMatch(/from ['"]\.\.\/core\/context['"]/)
     expect(src).toContain('IconTriggerProps')
-    expect(src).toContain('getVariants')
     expect(src).toContain('hasOwnTriggers')
-
-    // The two render branches: self-wrapped (when a trigger prop is set) and
-    // bare <motion.svg> (controlled externally). Missing either silently
-    // breaks one of the two consumer idioms in README.
     expect(src).toContain('<AnimateIcon')
-    expect(src).toContain('<motion.svg')
 
-    // Every animation set must define `default` — getVariants() falls back to
-    // it, and the consumer's `animation="default"` is the prop default.
-    expect(src).toMatch(/animations\s*=\s*{[\s\S]*default\s*:/)
+    // Two render layouts coexist:
+    //   1. Hand-templated: in-place <motion.svg> with elements baked into the
+    //      template; per-element variants come from getVariants(animations).
+    //   2. Data-driven: forge-generated multi-variant icons whose element
+    //      graphs diverge across animations; delegate to <MultiVariantIcon>
+    //      which swaps the active animation's elements at runtime.
+    const usesMultiVariantIcon = src.includes('<MultiVariantIcon')
+
+    if (usesMultiVariantIcon) {
+      expect(src).toMatch(
+        /import MultiVariantIcon from ['"]\.\.\/core\/MultiVariantIcon\.vue['"]/,
+      )
+      expect(src).toContain('MultiVariantAnimations')
+      // No inline <motion.svg> when delegating — the core component handles it.
+      expect(src).not.toContain('<motion.svg')
+    } else {
+      expect(src).toMatch(/from ['"]motion-v['"]/)
+      expect(src).toMatch(/from ['"]\.\.\/core\/context['"]/)
+      expect(src).toContain('getVariants')
+      expect(src).toContain('<motion.svg')
+      // Every animation set must define `default` — getVariants() falls back
+      // to it, and the consumer's `animation="default"` is the prop default.
+      expect(src).toMatch(/animations\s*=\s*{[\s\S]*default\s*:/)
+    }
   })
 })

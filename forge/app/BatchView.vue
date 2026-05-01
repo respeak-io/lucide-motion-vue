@@ -215,18 +215,12 @@ const selectedCount = computed(
 )
 
 const totalSelectedFiles = computed(() => {
-  // Heads-up number for the sticky save button: how many SFCs will be
-  // written if the user saves everything currently selected.
+  // Every selected row writes one SFC (single-variant or multi-variant via
+  // hand-templated merge or runtime <MultiVariantIcon>) — count is just the
+  // number of rows with at least one pick.
   let total = 0
   for (const row of state.value?.rows ?? []) {
-    const indices = row.selectedIndices ?? []
-    if (indices.length === 0) continue
-    if (indices.length === 1) total += 1
-    else if (areMergeCompatible(indices.map(i => row.proposals?.[i]).filter(Boolean) as Proposal[])) {
-      total += 1
-    } else {
-      total += indices.length
-    }
+    if ((row.selectedIndices?.length ?? 0) > 0) total += 1
   }
   return total
 })
@@ -278,16 +272,20 @@ function variantNameForRank(rank: number): string {
 
 function rowCompatibility(
   rowIndex: number,
-): { kind: 'single' | 'merge' | 'split'; count: number } | null {
+): { kind: 'single' | 'merge' | 'merge-runtime'; count: number; variants: string[] } | null {
   const row = state.value?.rows[rowIndex]
   if (!row || !row.proposals) return null
   const indices = row.selectedIndices ?? []
   if (indices.length === 0) return null
-  if (indices.length === 1) return { kind: 'single', count: 1 }
+  const variants = indices.map((_, i) => variantNameForRank(i + 1))
+  if (indices.length === 1) return { kind: 'single', count: 1, variants }
   const proposals = indices.map(i => row.proposals![i])
+  // Compatible silhouettes merge into one efficient hand-templated SFC.
+  // Diverging silhouettes still merge into one file via <MultiVariantIcon>
+  // — same public API for consumers, slightly heavier per-icon at runtime.
   return areMergeCompatible(proposals)
-    ? { kind: 'merge', count: indices.length }
-    : { kind: 'split', count: indices.length }
+    ? { kind: 'merge', count: indices.length, variants }
+    : { kind: 'merge-runtime', count: indices.length, variants }
 }
 
 function rankFor(row: BatchState['rows'][number], cardIndex: number): number | undefined {
@@ -432,14 +430,15 @@ function setRowRef(el: Element | null, rowIndex: number) {
             :class="rowCompatibility(i)!.kind"
           >
             <template v-if="rowCompatibility(i)!.kind === 'single'">
-              1 selected · 1 file
+              1 selected · default
             </template>
             <template v-else-if="rowCompatibility(i)!.kind === 'merge'">
-              ✓ {{ rowCompatibility(i)!.count }} selected · merges as variants
+              ✓ {{ rowCompatibility(i)!.count }} variants:
+              {{ rowCompatibility(i)!.variants.join(', ') }}
             </template>
             <template v-else>
-              ⚠ {{ rowCompatibility(i)!.count }} selected · writes
-              {{ rowCompatibility(i)!.count }} files (shapes diverge)
+              ✓ {{ rowCompatibility(i)!.count }} variants (runtime):
+              {{ rowCompatibility(i)!.variants.join(', ') }}
             </template>
           </div>
           <button
@@ -646,7 +645,7 @@ function setRowRef(el: Element | null, rowIndex: number) {
 }
 .compat-hint.single { background: #f3f4f6; color: #555; }
 .compat-hint.merge { background: #dcfce7; color: #166534; }
-.compat-hint.split { background: #fef3c7; color: #92400e; }
+.compat-hint.merge-runtime { background: #ecfdf5; color: #065f46; }
 
 .row-save {
   margin-top: 4px;

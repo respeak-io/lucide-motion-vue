@@ -208,6 +208,12 @@ shape ship as **numbered siblings** — e.g. `Send2`, `Moon2`, `X2`,
 `AlarmClock2` — so both the original and the alternate animation stay
 available. Siblings have their own `Pascal` name and default variant.
 
+Forge-generated multi-variant icons can also ship variants whose element
+graphs diverge (different path splits, different animated parts) under one
+component name. This is wired internally via `<MultiVariantIcon>`; from the
+consumer side it's still just `<Bell animation="alt" />` with the same
+discoverability through `iconsMeta`.
+
 ### Clip overflow for exit animations
 
 A few icons intentionally move parts outside their viewBox — `Send`'s plane
