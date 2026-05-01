@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { AnimateIcon, Moon, Sun, SunMoon, iconsMeta } from '@respeak/lucide-motion-vue'
+
+// Sum every variant in iconsMeta so the tagline auto-updates when the
+// codemod scripts add/remove icons or variants — no hardcoded "815" to
+// drift out of sync between docs, README, and the package description.
+const totalVariants = computed(() =>
+  iconsMeta.reduce((acc, i) => acc + i.animations.length, 0),
+)
 import ColorPicker from './ColorPicker.vue'
 import type { Route } from '../router'
 import type { Theme } from '../composables/use-theme'
@@ -52,8 +59,9 @@ function go(view: Route['view']) {
         </a>
       </h1>
       <p class="tagline">
-        {{ iconsMeta.length }} Lucide icons animated with Motion for Vue.
-        Hover any card to preview; click for variants and copy-paste snippets.
+        {{ iconsMeta.length }} Lucide icons, {{ totalVariants }} named animations,
+        with Motion for Vue. Hover any card to preview; click for variants and
+        copy-paste snippets.
       </p>
     </div>
 

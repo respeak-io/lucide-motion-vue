@@ -1,6 +1,6 @@
 {
   "name": "@respeak/lucide-motion-vue",
-  "description": "Lucide icons animated with Motion for Vue — ergonomic animateOnHover, animateOnTap, animateOnView, and a composable <AnimateIcon> wrapper.",
+  "description": "523 Lucide icons / 815 named animations for Vue 3 — ergonomic animateOnHover/Tap/View triggers, a composable <AnimateIcon> wrapper, and a Nuxt module. Tree-shakable, SSR-safe.",
   "version": "0.6.2",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
