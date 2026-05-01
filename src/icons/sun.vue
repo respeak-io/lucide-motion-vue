@@ -59,15 +59,71 @@ const animations: MultiVariantAnimations = {
   alt: {
     elements: [
       { tag: "circle", attrs: { cx: "12", cy: "12", r: "4" } },
-      { tag: "path", attrs: { "v-for": "(d, index) in VFOR_LIST_1" }, key: "path" },
+      { tag: "path", attrs: { d: "M12 2v2" }, key: "path1" },
+      { tag: "path", attrs: { d: "m19.07 4.93-1.41 1.41" }, key: "path2" },
+      { tag: "path", attrs: { d: "M20 12h2" }, key: "path3" },
+      { tag: "path", attrs: { d: "m17.66 17.66 1.41 1.41" }, key: "path4" },
+      { tag: "path", attrs: { d: "M12 20v2" }, key: "path5" },
+      { tag: "path", attrs: { d: "m6.34 17.66-1.41 1.41" }, key: "path6" },
+      { tag: "path", attrs: { d: "M2 12h2" }, key: "path7" },
+      { tag: "path", attrs: { d: "m4.93 4.93 1.41 1.41" }, key: "path8" },
     ],
     variants: {
-    path: {
+    path1: {
   initial: { opacity: 1 },
-  animate: (i: number) => ({
+  animate: ((i: number) => ({
     opacity: [0, 1],
     transition: { delay: i * 0.1, duration: 0.3 },
-  }),
+  }))(1),
+},
+    path2: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(2),
+},
+    path3: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(3),
+},
+    path4: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(4),
+},
+    path5: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(5),
+},
+    path6: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(6),
+},
+    path7: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(7),
+},
+    path8: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(8),
 },
   } as Record<string, Variants>,
   },

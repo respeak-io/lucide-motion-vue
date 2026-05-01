@@ -1909,6 +1909,159 @@ function formatElementLiteral(el, indent) {
 }
 
 /**
+ * Pre-merge expansion: pqoqubbw renders staggered animations as
+ *   `[paths].map((d, index) => <motion.path custom={index+1} variants={SHARED} d={d} />)`
+ * which our upstream port preserves as a Vue v-for + a function-form
+ * variant body. Vue + motion-v honour this for fresh-port SFCs (the
+ * v-for iterates and `:custom` propagates per element). The merger
+ * encodes element graphs as plain `SvgElement[]` for `<MultiVariantIcon>`,
+ * which spreads `attrs` via `v-bind` — `v-for` is *not* a Vue directive
+ * in that mode, just a literal attribute name. The merged icon's alt
+ * variant would otherwise render a single empty `<path>` with no
+ * animation (sun, sun-medium were the visible regressions).
+ *
+ * Expand v-for'd elements in the upstream SFC text *before* the merger
+ * parses it: resolve the `VFOR_LIST_<n>` array, generate N concrete
+ * `<motion.path>` elements with literal attrs, mint per-iteration variant
+ * keys (`<key>1`, `<key>2`, ...), bake each function-form variant via
+ * IIFE on the per-iteration `custom` value, and strip the VFOR_LIST
+ * declarations. The result parses cleanly through the existing
+ * `parseSfcToMultiVariantData` with no special v-for awareness needed.
+ */
+function expandVforForMerge(sfcText) {
+  const lists = {}
+  const listDecls = []
+  const listHeaderRe = /const\s+(VFOR_LIST_\d+)\s*=\s*\[/g
+  let lh
+  while ((lh = listHeaderRe.exec(sfcText)) !== null) {
+    const arrOpen = lh.index + lh[0].length - 1
+    let arrEnd
+    try { ({ end: arrEnd } = extractBalanced(sfcText, arrOpen, '[', ']')) }
+    catch { continue }
+    const arrSrc = sfcText.slice(arrOpen, arrEnd)
+    let value
+    try { value = Function(`"use strict"; return (${arrSrc});`)() }
+    catch { continue }
+    if (!Array.isArray(value)) continue
+    lists[lh[1]] = value
+    // Eat trailing `;` and a single newline so the strip below leaves no
+    // dangling blank line where the const used to live.
+    let declEnd = arrEnd
+    if (sfcText[declEnd] === ';') declEnd++
+    if (sfcText[declEnd] === '\n') declEnd++
+    listDecls.push({ start: lh.index, end: declEnd, name: lh[1] })
+  }
+  if (listDecls.length === 0) return sfcText
+
+  const elementExpansions = []
+  const variantExpansions = {}
+
+  const elemRe = /<motion\.([a-z]+)\b([^>]*?)\/>/g
+  let em
+  while ((em = elemRe.exec(sfcText)) !== null) {
+    const tag = em[1]
+    const attrs = em[2]
+    const vfor = attrs.match(
+      /\bv-for="(?:\(\s*([A-Za-z_$][\w$]*)\s*,\s*([A-Za-z_$][\w$]*)\s*\)|([A-Za-z_$][\w$]*))\s+in\s+(VFOR_LIST_\d+)"/,
+    )
+    if (!vfor) continue
+    const itemVar = vfor[1] || vfor[3]
+    const indexVar = vfor[1] ? vfor[2] : null
+    const list = lists[vfor[4]]
+    if (!list) continue
+    const customMatch = attrs.match(/:custom="([^"]+)"/)
+    const customExpr = customMatch ? customMatch[1].trim() : null
+    const variantsMatch = attrs.match(/:variants="variants\.([A-Za-z_][\w]*)"/)
+    if (!variantsMatch) continue
+    const partKey = variantsMatch[1]
+
+    const lines = list.map((item, j) => {
+      // Strip framework + iteration-only attrs. The merger rebuilds these
+      // (`:animate`, `initial`, `@animationComplete`) inside MultiVariantElement.
+      let perAttrs = attrs
+        .replace(/\s+v-for="[^"]*"/, '')
+        .replace(/\s+:key="[^"]*"/, '')
+        .replace(/\s+:custom="[^"]*"/, '')
+        .replace(/\s+@animationComplete="[^"]*"/, '')
+        .replace(/\s+:animate="[^"]*"/, '')
+      perAttrs = perAttrs.replace(/(\s+):([a-zA-Z][a-zA-Z0-9-]*)="([^"]+)"/g, (full, ws, name, expr) => {
+        if (name === 'variants') return full
+        try {
+          const args = [itemVar]
+          const vals = [item]
+          if (indexVar) { args.push(indexVar); vals.push(j) }
+          const value = Function(...args, `"use strict"; return (${expr});`)(...vals)
+          if (typeof value === 'string') return `${ws}${name}="${value}"`
+          if (typeof value === 'number') return `${ws}:${name}="${value}"`
+          return full
+        } catch {
+          return full
+        }
+      })
+      const newKey = `${partKey}${j + 1}`
+      perAttrs = perAttrs.replace(
+        new RegExp(`:variants="variants\\.${partKey}"`),
+        `:variants="variants.${newKey}"`,
+      )
+      return `<motion.${tag}${perAttrs}/>`
+    })
+    elementExpansions.push({
+      start: em.index,
+      end: em.index + em[0].length,
+      replacement: lines.join('\n      '),
+    })
+    variantExpansions[partKey] = list.map((_, j) => ({
+      newKey: `${partKey}${j + 1}`,
+      customValue: evalCustomExprForIndex(customExpr, indexVar, j),
+    }))
+  }
+
+  if (elementExpansions.length === 0) return sfcText
+
+  let out = sfcText
+  // Element + list-decl removals applied right-to-left so earlier slice
+  // offsets stay valid throughout.
+  for (const ex of [...elementExpansions, ...listDecls].sort((a, b) => b.start - a.start)) {
+    if (ex.replacement !== undefined) {
+      out = out.slice(0, ex.start) + ex.replacement + out.slice(ex.end)
+    } else {
+      out = out.slice(0, ex.start) + out.slice(ex.end)
+    }
+  }
+
+  for (const [partKey, expansions] of Object.entries(variantExpansions)) {
+    out = expandVariantEntry(out, partKey, expansions)
+  }
+
+  return out
+}
+
+/** Expand a single `<partKey>: { ... }` entry inside the SFC's variants
+ * block into N keyed entries (`<partKey>1`..`<partKey>N`), each carrying
+ * the original body with its `animate: (i) => (...)` arrow baked through
+ * an IIFE on the iteration's custom value. If the body isn't dynamic,
+ * the bake passes through unchanged — the entry just gets duplicated
+ * with renamed keys. */
+function expandVariantEntry(sfcText, partKey, expansions) {
+  const re = new RegExp(`(\\n[ \\t]*)${partKey}\\s*:\\s*\\{`)
+  const m = sfcText.match(re)
+  if (!m) return sfcText
+  const indent = m[1]
+  const braceIdx = m.index + m[0].length - 1
+  let bodyEnd
+  try { ({ end: bodyEnd } = extractBalanced(sfcText, braceIdx)) }
+  catch { return sfcText }
+  const bodySrc = sfcText.slice(braceIdx + 1, bodyEnd - 1)
+  let after = bodyEnd
+  if (sfcText[after] === ',') after++
+  const newEntries = expansions.map(({ newKey, customValue }) => {
+    const baked = iifeAnimateForCustom(bodySrc, customValue)
+    return `${indent}${newKey}: {${baked}},`
+  }).join('')
+  return sfcText.slice(0, m.index) + newEntries + sfcText.slice(after)
+}
+
+/**
  * Replace the existing SFC at `src/icons/<upstreamKebab>.vue` with a
  * multi-variant SFC carrying both the existing silhouette (as `default`) and
  * the pqoqubbw upstream silhouette (as `alt`). Idempotent at the meta level —
@@ -1928,7 +2081,7 @@ function mergeAsMultiVariant(upstreamKebab) {
   // Render upstream pqoqubbw to SFC text in memory (no file write).
   const built = buildPqoqubbwSfc(upstreamKebab)
   const baseData = parseSfcToMultiVariantData(existingSrc)
-  const altData = parseSfcToMultiVariantData(built.sfc)
+  const altData = parseSfcToMultiVariantData(expandVforForMerge(built.sfc))
 
   const merged = renderMultiVariantSfc({
     pascal: built.pascal,
@@ -1955,6 +2108,7 @@ export {
   buildPqoqubbwSfc,
   augmentOne,
   ensureUpstream,
+  expandVforForMerge,
 }
 const isMain = process.argv[1] === fileURLToPath(import.meta.url)
 if (isMain) runMain()

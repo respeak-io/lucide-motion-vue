@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url'
 import {
   parseSfcToMultiVariantData,
   renderMultiVariantSfc,
+  expandVforForMerge,
 } from './port-pqoqubbw-icons.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -63,7 +64,12 @@ for (const [base, sibling, sha] of PAIRS) {
   let fresh, onDisk
   try {
     const baseData = parseSfcToMultiVariantData(reread(sha, `src/icons/${base}.vue`))
-    const altData = parseSfcToMultiVariantData(reread(sha, `src/icons/${sibling}.vue`))
+    // Expand v-for'd elements before parsing — pqoqubbw `.map()` collapses
+    // to a single Vue v-for in the upstream-rendered SFC, which the merger
+    // can't carry into MultiVariantIcon's plain SvgElement[] graph (sun and
+    // sun-medium were the visible regressions before this preprocessor).
+    const altSrc = expandVforForMerge(reread(sha, `src/icons/${sibling}.vue`))
+    const altData = parseSfcToMultiVariantData(altSrc)
     fresh = renderMultiVariantSfc({ pascal: kebabToPascal(base), baseData, altData })
     onDisk = readFileSync(join(ICONS_DIR, `${base}.vue`), 'utf8')
   } catch (e) {
