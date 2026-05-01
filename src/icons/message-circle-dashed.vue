@@ -67,18 +67,60 @@ const animations = {
     group: {},
     path1: {
   initial: { opacity: 1 },
-  animate: (i: number) => ({
+  animate: ((i: number) => ({
     opacity: [0, 1],
     transition: { delay: i * 0.1, duration: 0.3 },
-  }),
+  }))(1),
     },
-    path2: {},
-    path3: {},
-    path4: {},
-    path5: {},
-    path6: {},
-    path7: {},
-    path8: {},
+    path2: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(2),
+    },
+    path3: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(3),
+    },
+    path4: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(4),
+    },
+    path5: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(5),
+    },
+    path6: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(6),
+    },
+    path7: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(7),
+    },
+    path8: {
+  initial: { opacity: 1 },
+  animate: ((i: number) => ({
+    opacity: [0, 1],
+    transition: { delay: i * 0.1, duration: 0.3 },
+  }))(8),
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 

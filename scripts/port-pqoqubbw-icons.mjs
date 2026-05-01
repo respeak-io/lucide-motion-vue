@@ -1129,10 +1129,92 @@ function upstreamVariantShape(kebab) {
     if (!v) continue
     const partName = resolvePart(v)
     const dMatch = attrs.match(/\bd="([^"]+)"/)
-    orderedParts.push({ tag, partName, d: dMatch ? dMatch[1].trim() : null })
+    // v-for + custom: pqoqubbw's dashed/chart icons render N paths via
+    // `[...].map((d, index) => <motion.path custom={index + 1} variants={SHARED}>)`.
+    // After rewriteReactMapLoops, that collapses to ONE motion.path with
+    // `v-for="(d, index) in VFOR_LIST_<n>"` and a function-form variant
+    // body like `animate: (i: number) => ({ delay: i * 0.1 })`. Augment
+    // splices a single `pathN` slot into the existing hand template, which
+    // has no v-for (each path is its own element) and no way to forward
+    // `:custom`. Capture the loop's index var + `custom={...}` expression
+    // so augmentOne can fan one upstream body across N hand paths and
+    // pre-invoke the function with each path's `i` value.
+    const vforAttr = attrs.match(
+      /v-for="(?:\(\s*[A-Za-z_$][\w$]*\s*,\s*([A-Za-z_$][\w$]*)\s*\)|([A-Za-z_$][\w$]*))\s+in\s+/,
+    )
+    const customAttr = attrs.match(/\bcustom=\{([^{}]+)\}/)
+    orderedParts.push({
+      tag,
+      partName,
+      d: dMatch ? dMatch[1].trim() : null,
+      vforIndexVar: vforAttr ? (vforAttr[1] || null) : null,
+      customExpr: customAttr ? customAttr[1].trim() : null,
+    })
   }
 
   return { orderedParts, partBodies }
+}
+
+/**
+ * Wrap a variants body's `animate: (PARAMS) => (BODY)` arrow function in an
+ * IIFE that immediately invokes itself with `customValue`, turning a
+ * dynamic-by-`custom`-prop variant into a static one. Used by augmentOne
+ * when a single upstream `.map()`-collapsed path has to fan across N hand
+ * paths that share no v-for binding (so `custom` can't be propagated at
+ * runtime). The hand template's existing `:variants="variants.pathN"`
+ * bindings stay untouched — each pathN now points at a pre-invoked,
+ * static variant instead of a function expecting a custom value that
+ * never arrives.
+ *
+ * Returns `body` unchanged if it doesn't contain a dynamic `animate:` —
+ * caller is responsible for only invoking when isDynamic is true.
+ */
+function iifeAnimateForCustom(body, customValue) {
+  const animMatch = body.match(/\banimate\s*:\s*(?=\()/)
+  if (!animMatch) return body
+  const paramsStart = body.indexOf('(', animMatch.index + animMatch[0].length)
+  if (paramsStart < 0) return body
+  let paramsEnd
+  try { ({ end: paramsEnd } = extractBalanced(body, paramsStart, '(', ')')) }
+  catch { return body }
+  const after = body.slice(paramsEnd)
+  const arrowMatch = after.match(/^\s*=>\s*\(/)
+  if (!arrowMatch) return body
+  const exprBodyStart = paramsEnd + arrowMatch[0].length - 1
+  let exprBodyEnd
+  try { ({ end: exprBodyEnd } = extractBalanced(body, exprBodyStart, '(', ')')) }
+  catch { return body }
+  const arrowFn = body.slice(paramsStart, exprBodyEnd)
+  return body.slice(0, paramsStart) + `(${arrowFn})(${customValue})` + body.slice(exprBodyEnd)
+}
+
+/** Evaluate the upstream `custom={...}` expression for hand-path index `j`.
+ * `index + 1` → j+1, `index` → j, `1` → 1. Falls back to `j + 1` if the
+ * expression can't be parsed (sensible default for the dashed family). */
+function evalCustomExprForIndex(customExpr, indexVar, j) {
+  if (!customExpr) return j + 1
+  try {
+    if (indexVar) {
+      return Function(indexVar, `"use strict"; return (${customExpr})`)(j)
+    }
+    return Function(`"use strict"; return (${customExpr})`)()
+  } catch {
+    return j + 1
+  }
+}
+
+/** Bake an upstream variant body for a hand path. If the body is static,
+ * returns it unchanged. If it's dynamic (`animate: (i) => (...)`), wraps
+ * the arrow in an IIFE that pre-invokes it with the per-path custom value
+ * — using the upstream element's `custom={...}` expression evaluated at
+ * `j` (or its v-for index if collapsed from a `.map()`). Hand templates
+ * have no v-for to forward `:custom` per element, so we have to bake the
+ * variant statically. */
+function bakeBodyForHand(upPart, body, j) {
+  if (!body) return body
+  if (!/\banimate\s*:\s*\([^)]*\)\s*=>\s*\(/.test(body)) return body
+  const customValue = evalCustomExprForIndex(upPart.customExpr, upPart.vforIndexVar, j)
+  return iifeAnimateForCustom(body, customValue)
 }
 
 /** Treat svg/g as interchangeable "container" tags when checking structural
@@ -1275,8 +1357,13 @@ function augmentOne(kebab, variantName, { mode = 'print' } = {}) {
   /** Pair one hand element to one upstream element: validate tag
    * compatibility, record drift for path-type elements, and assign the
    * upstream body to the hand partKey — with the same dedupe rule as
-   * before for templates that reuse a partKey across siblings (wind). */
-  const pair = (h, u, posLabel) => {
+   * before for templates that reuse a partKey across siblings (wind).
+   * Dynamic upstream bodies (`animate: (i) => (...)`) are baked through
+   * an IIFE using the upstream element's `custom={N}` literal — the hand
+   * template has no v-for to forward `:custom` per element, so the
+   * variant has to be static. `j` is the hand-path index, used as the
+   * fallback `i` value when upstream's `custom` expr isn't a literal. */
+  const pair = (h, u, posLabel, j = 0) => {
     if (!tagsCompatible(h.tag, u.tag)) {
       throw Object.assign(
         new Error(`tag mismatch at ${posLabel}: existing=<motion.${h.tag}> upstream=<motion.${u.tag}>`),
@@ -1286,7 +1373,8 @@ function augmentOne(kebab, variantName, { mode = 'print' } = {}) {
     if (h.tag === 'path' && h.d && u.d && !dPrefixMatches(h.d, u.d)) {
       driftNotes.push({ partKey: h.partKey, existingD: h.d.slice(0, 60), upstreamD: u.d.slice(0, 60) })
     }
-    const newBody = up.partBodies.get(u.partName)
+    const rawBody = up.partBodies.get(u.partName)
+    const newBody = bakeBodyForHand(u, rawBody, j)
     if (assigned.has(h.partKey)) {
       if (assigned.get(h.partKey) !== newBody) {
         throw Object.assign(
@@ -1302,8 +1390,26 @@ function augmentOne(kebab, variantName, { mode = 'print' } = {}) {
   for (let i = 0; i < upSplit.containers.length; i++) {
     pair(handSplit.containers[i], upSplit.containers[i], `container[${i}]`)
   }
-  for (let i = 0; i < upSplit.paths.length; i++) {
-    pair(handSplit.paths[i], upSplit.paths[i], `path[${i}]`)
+
+  // Fan case: pqoqubbw's `.map((d, index) => <motion.path custom={index+1}
+  // variants={SHARED} />)` collapses to ONE upstream path with a v-for + a
+  // dynamic `animate: (i) => ({ delay: i * 0.1 })` body. The hand template
+  // has N separate `<motion.path :variants="variants.pathN" />` elements
+  // and no v-for, so we can't propagate `:custom` per element. Pre-invoke
+  // the function with each path's `i` value via IIFE so every hand pathN
+  // ends up with a static, baked-in variant body.
+  const onlyUp = upSplit.paths.length === 1 ? upSplit.paths[0] : null
+  const onlyUpBody = onlyUp ? up.partBodies.get(onlyUp.partName) : null
+  const onlyUpDynamic = onlyUpBody && /\banimate\s*:\s*\([^)]*\)\s*=>\s*\(/.test(onlyUpBody)
+  const isFanCase = onlyUp && onlyUpDynamic && handSplit.paths.length > 1
+  if (isFanCase) {
+    for (let j = 0; j < handSplit.paths.length; j++) {
+      pair(handSplit.paths[j], onlyUp, `fan path[${j}]`, j)
+    }
+  } else {
+    for (let i = 0; i < upSplit.paths.length; i++) {
+      pair(handSplit.paths[i], upSplit.paths[i], `path[${i}]`, i)
+    }
   }
   // Unpaired hand parts (extra containers or extra paths) stay out of
   // `assigned` — the renderer below will emit them as `{}` fillers.
@@ -1847,6 +1953,8 @@ export {
   renderMultiVariantSfc,
   mergeAsMultiVariant,
   buildPqoqubbwSfc,
+  augmentOne,
+  ensureUpstream,
 }
 const isMain = process.argv[1] === fileURLToPath(import.meta.url)
 if (isMain) runMain()

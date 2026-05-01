@@ -138,7 +138,7 @@ const animations = {
       damping: 13,
     },
   },
-  animate: (i: number) => ({
+  animate: ((i: number) => ({
     translateX: [2 * i, 0],
     opacity: [0, 1],
     transition: {
@@ -147,7 +147,7 @@ const animations = {
       stiffness: 200,
       damping: 13,
     },
-  }),
+  }))(2),
     },
     path2: {
   initial: {
@@ -159,7 +159,7 @@ const animations = {
       damping: 13,
     },
   },
-  animate: (i: number) => ({
+  animate: ((i: number) => ({
     translateX: [2 * i, 0],
     opacity: [0, 1],
     transition: {
@@ -168,7 +168,7 @@ const animations = {
       stiffness: 200,
       damping: 13,
     },
-  }),
+  }))(1),
     },
     rect: {},
   } satisfies Record<string, Variants>,
