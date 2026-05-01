@@ -9,6 +9,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 _Nothing yet._
 
+## [0.6.2] - 2026-05-01
+
+### Performance
+- **Lazy-load `MorphPath`** so flubber (~21 kB gzip) is only fetched by
+  icons that actually use a `paths` morph chain. Previously every
+  multi-variant SFC (`Sun`, `AudioLines`, `Cast`, …) pulled flubber via
+  `<MultiVariantElement>`'s static import — even though none of the
+  current merged icons morph. The `MultiVariantIcon` chunk drops from
+  **92 kB → 4.8 kB** raw (**22.6 kB → 1.4 kB** gzip).
+
 ## [0.6.1] - 2026-05-01
 
 ### Added

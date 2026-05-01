@@ -16,10 +16,15 @@
  *   - **static**: any element without a key → plain SVG tag, optionally
  *     containing children.
  */
+import { defineAsyncComponent } from 'vue'
 import { motion, type Variants } from 'motion-v'
-import MorphPath from './MorphPath.vue'
 import { useAnimateIconContext } from './context'
 import type { SvgElement } from './element-types'
+
+// Lazy-load MorphPath so flubber (~18 kB gzip) is only fetched by consumers
+// whose icon actually uses a `paths` chain. Without this, every multi-variant
+// SFC (sun, audio-lines, cast, …) pulled flubber even when no element morphs.
+const MorphPath = defineAsyncComponent(() => import('./MorphPath.vue'))
 
 defineOptions({ name: 'MultiVariantElement' })
 
