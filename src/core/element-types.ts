@@ -16,6 +16,13 @@ export type SvgTag =
   | 'ellipse'
   | 'polyline'
   | 'polygon'
+  /**
+   * Group wrapper. Used by icons whose animate-ui template wraps its body
+   * in a `<motion.g>` so a single variant drives a transform on the entire
+   * sub-tree (e.g. send's plane lifts off as a group). Renders as a real
+   * SVG `<g>` and recurses into `children`.
+   */
+  | 'g'
 
 export interface SvgElement {
   tag: SvgTag
@@ -32,6 +39,12 @@ export interface SvgElement {
    * the variant transition driving the silhouette interpolation.
    */
   paths?: string[]
+  /**
+   * Nested children (renders inside this element). Only meaningful for
+   * wrapper tags like `g`. motion-v's variant propagation flows from a
+   * keyed parent to its keyed/unkeyed children automatically.
+   */
+  children?: SvgElement[]
 }
 
 /**

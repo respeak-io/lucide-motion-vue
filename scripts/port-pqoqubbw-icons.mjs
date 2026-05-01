@@ -661,7 +661,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
  * get clipped by the user-agent's default `svg { overflow: hidden }` rule.
  */
 function addVElse(svgJsx, kind) {
-  const marker = '<motion.svg\n    v-else\n    overflow="visible"\n    pointer-events="bounding-box"\n    style="user-select: none; -webkit-user-select: none"'
+  const marker = '<motion.svg\n    v-else\n    overflow="visible"\n    style="user-select: none; -webkit-user-select: none; outline: none"'
   let out
   if (kind === 'motion-svg') {
     out = svgJsx.replace(/^<motion\.svg\b/, marker)
@@ -1451,41 +1451,117 @@ function parseSfcToMultiVariantData(src) {
   if (!svgMatch) throw new Error('no `<motion.svg>` block in template')
   const childrenSrc = svgMatch[1]
 
-  // Match every self-closing leaf element. Our generators emit children as
-  // `<motion.X ... />` or `<X ... />` (self-closing). Wrappers with content
-  // are out of scope and would error out below.
-  //
-  // Reject wrapper elements before they corrupt the parse. Our generators
-  // emit every leaf as `<X ... />` (self-closing), so any open tag without
-  // a matching `/>` (e.g. `<motion.g ...>...</motion.g>` driving variants
-  // through group propagation) is something the current merger can't
-  // represent in `MultiVariantAnimations` data. Bail with a clear error so
-  // the caller falls back to keeping the sibling pair.
-  for (const m of childrenSrc.matchAll(/<(motion\.[a-zA-Z]+|[a-zA-Z][\w]*)\b([^>]*)>/g)) {
-    const fullTag = m[1]
-    const tag = fullTag.startsWith('motion.') ? fullTag.slice('motion.'.length) : fullTag
-    if (tag === 'svg') continue
-    if (m[2].trimEnd().endsWith('/')) continue
-    throw new Error(`wrapper element <${fullTag}> not supported by merger`)
-  }
-
-  const elements = []
-  const elemRe = /<(motion\.[a-zA-Z]+|[a-zA-Z][\w]*)\b([\s\S]*?)\/>/g
-  let m
-  while ((m = elemRe.exec(childrenSrc)) !== null) {
-    const fullTag = m[1]
-    const tag = fullTag.startsWith('motion.') ? fullTag.slice('motion.'.length) : fullTag
-    if (tag === 'svg') continue
-    const { attrs, partKey } = parseLeafAttrs(m[2])
-    const el = { tag, attrs }
-    if (partKey) el.key = partKey
-    elements.push(el)
-  }
+  const elements = parseTemplateChildren(childrenSrc)
   if (elements.length === 0) {
-    throw new Error('no leaf elements found in template')
+    throw new Error('no elements found in template')
   }
 
   return { elements, variantsSrc }
+}
+
+/**
+ * Recursively parse a template fragment into an `SvgElement[]`. Handles two
+ * shapes that our generators emit:
+ *   - **Self-closing leaves**: `<motion.path ... />`, `<path ... />`,
+ *     `<circle ... />`, etc. Most of the icons we ship.
+ *   - **Group wrappers**: `<motion.g ...>...</motion.g>`, `<g ...>...</g>`.
+ *     Used by animate-ui icons that drive a single variant transform on a
+ *     whole sub-tree (e.g. `send`'s plane-takeoff group). The wrapper's
+ *     attrs/key are captured on the parent; inner content recurses.
+ *
+ * Walks character by character so nested same-tag wrappers (`<g><g>...</g></g>`,
+ * not currently emitted but cheap to support) don't trip a regex backref.
+ */
+function parseTemplateChildren(src) {
+  const out = []
+  let i = 0
+  while (i < src.length) {
+    if (src[i] !== '<') { i++; continue }
+    // Comments + close-tag fragments are not children — skip them.
+    if (src.startsWith('<!--', i)) {
+      const end = src.indexOf('-->', i)
+      i = end < 0 ? src.length : end + 3
+      continue
+    }
+    if (src[i + 1] === '/') {
+      // Stray close tag at top level (shouldn't happen in well-formed input).
+      i = src.indexOf('>', i)
+      if (i < 0) break
+      i++
+      continue
+    }
+    // Match an opening tag header up to its `>`.
+    const headerRe = /^<(motion\.[a-zA-Z]+|[a-zA-Z][\w]*)\b([\s\S]*?)(\/?)>/
+    const m = src.slice(i).match(headerRe)
+    if (!m) { i++; continue }
+    const fullTag = m[1]
+    const attrsSrc = m[2]
+    const isSelfClosing = m[3] === '/'
+    const tag = fullTag.startsWith('motion.') ? fullTag.slice('motion.'.length) : fullTag
+    if (tag === 'svg') {
+      // Outer was already stripped by the caller — defensive skip.
+      i += m[0].length
+      continue
+    }
+    const { attrs, partKey } = parseLeafAttrs(attrsSrc)
+    const el = { tag, attrs }
+    if (partKey) el.key = partKey
+
+    if (isSelfClosing) {
+      out.push(el)
+      i += m[0].length
+      continue
+    }
+
+    // Open tag: find its matching close, accounting for nested same-name opens.
+    const innerStart = i + m[0].length
+    const closeNeedle = `</${fullTag}>`
+    const openNeedlePrefix = `<${fullTag}`
+    let depth = 1
+    let scan = innerStart
+    let closeIdx = -1
+    while (scan < src.length) {
+      const nextClose = src.indexOf(closeNeedle, scan)
+      if (nextClose < 0) break
+      // Look for any nested same-name open between scan and nextClose.
+      let nestedOpenIdx = -1
+      let probe = scan
+      while (probe < nextClose) {
+        const candidate = src.indexOf(openNeedlePrefix, probe)
+        if (candidate < 0 || candidate >= nextClose) break
+        // Only count it as a nested open if the tag-name boundary is real
+        // (next char is whitespace, `>` or `/`). Otherwise it's a name-prefix
+        // collision (e.g. `<g>` matching `<g.foo>` — won't happen here, but
+        // guarded for safety).
+        const after = src[candidate + openNeedlePrefix.length]
+        if (/[\s/>]/.test(after)) { nestedOpenIdx = candidate; break }
+        probe = candidate + openNeedlePrefix.length
+      }
+      if (nestedOpenIdx >= 0) {
+        depth++
+        // Advance past the nested open's `>` (self-closing or not).
+        const gtIdx = src.indexOf('>', nestedOpenIdx)
+        if (gtIdx < 0) break
+        const isNestedSelfClose = src[gtIdx - 1] === '/'
+        scan = gtIdx + 1
+        if (isNestedSelfClose) depth--
+        continue
+      }
+      // No nested open before this close → this close matches us.
+      depth--
+      if (depth === 0) { closeIdx = nextClose; break }
+      scan = nextClose + closeNeedle.length
+    }
+    if (closeIdx < 0) {
+      throw new Error(`unmatched open <${fullTag}> — template not well-formed`)
+    }
+    const innerSrc = src.slice(innerStart, closeIdx)
+    const children = parseTemplateChildren(innerSrc)
+    if (children.length > 0) el.children = children
+    out.push(el)
+    i = closeIdx + closeNeedle.length
+  }
+  return out
 }
 
 /**
@@ -1546,15 +1622,7 @@ function parseLeafAttrs(attrsSrc) {
  * survives the round trip unchanged.
  */
 function renderMultiVariantSfc({ pascal, defaultData, altData }) {
-  const elementsLiteral = data => {
-    const lines = data.elements.map(el => {
-      const parts = [`tag: ${JSON.stringify(el.tag)}`]
-      parts.push(`attrs: ${formatAttrsLiteral(el.attrs)}`)
-      if (el.key) parts.push(`key: ${JSON.stringify(el.key)}`)
-      return `      { ${parts.join(', ')} },`
-    })
-    return `[\n${lines.join('\n')}\n    ]`
-  }
+  const elementsLiteral = data => formatElementArrayLiteral(data.elements, 6)
 
   return `<script setup lang="ts">
 // Multi-variant icon. \`default\` is the original silhouette; \`alt\` is the
@@ -1625,6 +1693,42 @@ function formatAttrsLiteral(attrs) {
   })
   if (entries.length === 0) return '{}'
   return `{ ${entries.join(', ')} }`
+}
+
+/**
+ * Render `SvgElement[]` as a JS array literal that fits inside the generated
+ * `MultiVariantAnimations` block. `indent` is the number of spaces of the
+ * outermost line (top-level call uses 6 to match the renderer template).
+ *
+ * Children render recursively as nested array literals so wrapper elements
+ * (`tag: 'g'`) come out as
+ *
+ *   { tag: 'g', attrs: {}, key: 'group', children: [
+ *     { tag: 'path', attrs: { d: '...' }, key: 'body' },
+ *   ] },
+ */
+function formatElementArrayLiteral(elements, indent) {
+  const inner = ' '.repeat(indent)
+  const open = ' '.repeat(Math.max(0, indent - 2))
+  const lines = elements.map(el => formatElementLiteral(el, indent))
+  return `[\n${lines.join('\n')}\n${open}]`
+  void inner
+}
+
+function formatElementLiteral(el, indent) {
+  const pad = ' '.repeat(indent)
+  const parts = [`tag: ${JSON.stringify(el.tag)}`]
+  parts.push(`attrs: ${formatAttrsLiteral(el.attrs)}`)
+  if (el.key) parts.push(`key: ${JSON.stringify(el.key)}`)
+  if (el.paths && el.paths.length) {
+    const pathLits = el.paths.map(p => JSON.stringify(p)).join(', ')
+    parts.push(`paths: [${pathLits}]`)
+  }
+  if (el.children && el.children.length) {
+    const childLines = el.children.map(c => formatElementLiteral(c, indent + 2))
+    parts.push(`children: [\n${childLines.join('\n')}\n${pad}]`)
+  }
+  return `${pad}{ ${parts.join(', ')} },`
 }
 
 /**

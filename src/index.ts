@@ -448,7 +448,6 @@ export { default as ScissorsLineDashed, default as ScissorsLineDashedAnimated } 
 export { default as Scissors, default as ScissorsAnimated } from './icons/scissors.vue'
 export { default as Search, default as SearchAnimated } from './icons/search.vue'
 export { default as SendHorizontal, default as SendHorizontalAnimated } from './icons/send-horizontal.vue'
-export { default as Send2, default as Send2Animated } from './icons/send-2.vue'
 export { default as Send, default as SendAnimated } from './icons/send.vue'
 export { default as Settings, default as SettingsAnimated } from './icons/settings.vue'
 export { default as ShieldCheck, default as ShieldCheckAnimated } from './icons/shield-check.vue'

@@ -10,17 +10,15 @@
  * to it; users still call the icon with `<Bell animation="alt" />` and
  * never see this component.
  *
- * Variant-switch behavior: when the user changes the `animation` prop and
- * the element graphs differ, Vue diffs the `<template v-for>` and
- * mounts/unmounts elements as the keys change. Elements that exist at the
- * same index in both variants and share the same `tag`+`attrs.d` will
- * be reused (no flicker). Elements unique to the new variant flash in.
+ * Element-tree shape: each variant ships a flat list of top-level
+ * `SvgElement` entries; wrapper tags (`g`) may carry `children` for
+ * recursive rendering. `<MultiVariantElement>` walks the tree.
  */
 import { computed } from 'vue'
-import { motion, type Variants } from 'motion-v'
-import MorphPath from './MorphPath.vue'
+import { motion } from 'motion-v'
+import MultiVariantElement from './MultiVariantElement.vue'
 import { useAnimateIconContext, type IconTriggerProps } from './context'
-import type { MultiVariantAnimations, SvgElement } from './element-types'
+import type { MultiVariantAnimations } from './element-types'
 
 const props = withDefaults(
   defineProps<
@@ -32,7 +30,11 @@ const props = withDefaults(
   { size: 28, strokeWidth: 2 },
 )
 
-const { current, animation, notifyComplete } = useAnimateIconContext()
+// Touch the context here so consumer triggers (e.g. `animateOnHover`) still
+// resolve at the icon-component layer; the tree-walker below reads `current`
+// itself for each animated child.
+useAnimateIconContext()
+const { animation } = useAnimateIconContext()
 
 const active = computed(() => {
   const requested = animation.value
@@ -42,20 +44,12 @@ const active = computed(() => {
     Object.values(props.animations)[0]
   )
 })
-
-function elementBindings(el: SvgElement): Record<string, string | number> {
-  return el.attrs ?? {}
-}
-
-function variantsFor(el: SvgElement): Variants | undefined {
-  if (!el.key) return undefined
-  return active.value.variants[el.key]
-}
 </script>
 
 <template>
   <motion.svg
     overflow="visible"
+    style="user-select: none; -webkit-user-select: none; outline: none"
     xmlns="http://www.w3.org/2000/svg"
     :width="props.size"
     :height="props.size"
@@ -66,29 +60,11 @@ function variantsFor(el: SvgElement): Variants | undefined {
     stroke-linecap="round"
     stroke-linejoin="round"
   >
-    <template v-for="(el, i) in active.elements" :key="`${i}-${el.tag}`">
-      <MorphPath
-        v-if="el.tag === 'path' && el.paths && el.paths.length >= 2"
-        :paths="el.paths"
-        :variants="variantsFor(el)"
-        initial="initial"
-        :animate="current"
-        @animationComplete="notifyComplete"
-      />
-      <component
-        v-else-if="el.key && variantsFor(el)"
-        :is="(motion as Record<string, unknown>)[el.tag]"
-        v-bind="elementBindings(el)"
-        :variants="variantsFor(el)"
-        initial="initial"
-        :animate="current"
-        @animationComplete="notifyComplete"
-      />
-      <component
-        v-else
-        :is="el.tag"
-        v-bind="elementBindings(el)"
-      />
-    </template>
+    <MultiVariantElement
+      v-for="(el, i) in active.elements"
+      :key="`${i}-${el.tag}`"
+      :el="el"
+      :variants="active.variants"
+    />
   </motion.svg>
 </template>

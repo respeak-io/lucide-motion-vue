@@ -122,4 +122,54 @@ describe('<MultiVariantIcon>', () => {
     expect(svg.attributes('viewBox')).toBe('0 0 24 24')
     wrapper.unmount()
   })
+
+  /**
+   * Wrapper elements (`tag: 'g'` with `children`) come from animate-ui icons
+   * that drive a single variant transform on a whole sub-tree — `send`'s
+   * plane-takeoff group is the canonical example. The renderer must mount
+   * the `<g>` and recurse into its children.
+   */
+  it('renders nested children inside a wrapper element', () => {
+    const wrapperAnims: MultiVariantAnimations = {
+      default: {
+        elements: [
+          {
+            tag: 'g',
+            attrs: {},
+            key: 'group',
+            children: [
+              { tag: 'path', attrs: { d: 'M0 0 L24 24' }, key: 'p1' },
+              { tag: 'path', attrs: { d: 'M24 0 L0 24' }, key: 'p2' },
+            ],
+          },
+        ],
+        variants: {
+          group: { initial: { scale: 1 }, animate: { scale: 1.1 } },
+          p1: { initial: { pathLength: 0 }, animate: { pathLength: 1 } },
+          p2: { initial: { pathLength: 0 }, animate: { pathLength: 1 } },
+        },
+      },
+    }
+    const ctx: AnimateIconContext = {
+      current: ref('initial'),
+      animation: ref('default'),
+      notifyComplete: () => {},
+    }
+    const Host = defineComponent({
+      setup() {
+        provide(AnimateIconKey, ctx)
+        return () => h(MultiVariantIcon, { animations: wrapperAnims, size: 24 })
+      },
+    })
+    const wrapper = mount(Host, { attachTo: document.body })
+
+    // The wrapper <g> must mount, with both child paths rendered inside it.
+    const group = wrapper.find('g')
+    expect(group.exists()).toBe(true)
+    expect(group.findAll('path').length).toBe(2)
+    expect(group.findAll('path')[0].attributes('d')).toBe('M0 0 L24 24')
+    expect(group.findAll('path')[1].attributes('d')).toBe('M24 0 L0 24')
+
+    wrapper.unmount()
+  })
 })
