@@ -470,6 +470,8 @@ header.top .brand h1 {
   color: var(--fg);
   position: relative;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
   transition:
     border-color 180ms var(--ease-smooth),
     transform 220ms var(--ease-smooth),
@@ -652,6 +654,8 @@ header.top .brand h1 {
   cursor: pointer;
   transition: background 120ms, color 120ms, border-color 120ms;
   flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .icon-btn:hover {
@@ -1665,8 +1669,8 @@ header.top .brand h1 {
 .pg-side,
 .pg-knobs {
   position: sticky;
-  top: 180px;
-  max-height: calc(100vh - 200px);
+  top: 110px;
+  max-height: calc(100vh - 130px);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1757,6 +1761,8 @@ header.top .brand h1 {
   align-items: center;
   justify-content: center;
   color: var(--fg);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .pg-stage-hint {
@@ -1776,19 +1782,11 @@ header.top .brand h1 {
 .pg-side { padding-right: 2px; }
 .pg-knobs { padding-left: 2px; }
 
-/* Knobs panel may be taller than the viewport on small-ish screens —
-   give it its own overflow so the stage/snippet never push it around. */
+/* The knobs are sized to fit within the sticky max-height so the rail
+   itself doesn't carry a vertical scrollbar. */
 .pg-knobs {
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
+  overflow: visible;
 }
-.pg-knobs::-webkit-scrollbar { width: 6px; }
-.pg-knobs::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 3px;
-}
-.pg-knobs::-webkit-scrollbar-track { background: transparent; }
 
 /* --- Responsive --- */
 /* Tablet: drop the right rail, keep the picker. Knobs re-attach under the

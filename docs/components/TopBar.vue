@@ -108,11 +108,6 @@ function go(view: Route['view']) {
           </button>
         </AnimateIcon>
 
-        <ColorPicker
-          :model-value="iconColor"
-          @update:model-value="emit('update:iconColor', $event)"
-        />
-
         <a
           class="icon-btn"
           href="https://github.com/respeak-io/lucide-motion-vue"
@@ -129,6 +124,10 @@ function go(view: Route['view']) {
     </div>
 
     <div v-if="showSearch" class="toolbar">
+      <ColorPicker
+        :model-value="iconColor"
+        @update:model-value="emit('update:iconColor', $event)"
+      />
       <div class="search">
         <span class="icon-leading" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"

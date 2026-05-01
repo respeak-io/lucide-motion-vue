@@ -201,8 +201,8 @@ function pickCustom(e: Event) {
 .pg-controls {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 18px;
+  gap: 14px;
+  padding: 14px 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -212,7 +212,7 @@ function pickCustom(e: Event) {
 .pg-ctrl {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .pg-ctrl-head {

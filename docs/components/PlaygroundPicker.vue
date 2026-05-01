@@ -183,6 +183,8 @@ function scrollSelectedIntoView() {
   color: var(--fg-muted);
   cursor: pointer;
   transition: all 140ms var(--ease-smooth);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .pg-picker-tile:hover {

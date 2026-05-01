@@ -128,7 +128,7 @@ watch(
       :theme="theme"
       :icon-color="iconColor"
       :route="route"
-      :scrolled="scrolled && route.view !== 'playground'"
+      :scrolled="scrolled || route.view === 'playground'"
       @update:search="search = $event"
       @update:icon-color="iconColor = $event"
       @cycle-theme="cycle"
