@@ -24,7 +24,7 @@ const animations: MultiVariantAnimations = {
   default: {
     elements: [
       { tag: "path", attrs: { d: "M12 8V4H8" }, key: "path1" },
-      { tag: "rect", attrs: { x: 4, y: 8, rx: 2 }, key: "rect" },
+      { tag: "rect", attrs: { width: 16, height: 12, x: 4, y: 8, rx: 2 }, key: "rect" },
       { tag: "path", attrs: { d: "M2 14h2" }, key: "path2" },
       { tag: "path", attrs: { d: "M20 14h2" }, key: "path3" },
       { tag: "path", attrs: { d: "M15 13v2" }, key: "path4" },
@@ -68,7 +68,7 @@ const animations: MultiVariantAnimations = {
   blink: {
     elements: [
       { tag: "path", attrs: { d: "M12 8V4H8" }, key: "path1" },
-      { tag: "rect", attrs: { x: 4, y: 8, rx: 2 }, key: "rect" },
+      { tag: "rect", attrs: { width: 16, height: 12, x: 4, y: 8, rx: 2 }, key: "rect" },
       { tag: "path", attrs: { d: "M2 14h2" }, key: "path2" },
       { tag: "path", attrs: { d: "M20 14h2" }, key: "path3" },
       { tag: "path", attrs: { d: "M15 13v2" }, key: "path4" },
@@ -108,7 +108,7 @@ const animations: MultiVariantAnimations = {
   wink: {
     elements: [
       { tag: "path", attrs: { d: "M12 8V4H8" }, key: "path1" },
-      { tag: "rect", attrs: { x: 4, y: 8, rx: 2 }, key: "rect" },
+      { tag: "rect", attrs: { width: 16, height: 12, x: 4, y: 8, rx: 2 }, key: "rect" },
       { tag: "path", attrs: { d: "M2 14h2" }, key: "path2" },
       { tag: "path", attrs: { d: "M20 14h2" }, key: "path3" },
       { tag: "path", attrs: { d: "M15 13v2" }, key: "path4" },
@@ -137,7 +137,7 @@ const animations: MultiVariantAnimations = {
   alt: {
     elements: [
       { tag: "path", attrs: { d: "M12 8V4H8" } },
-      { tag: "rect", attrs: { rx: "2", x: "4", y: "8" } },
+      { tag: "rect", attrs: { height: "12", rx: "2", width: "16", x: "4", y: "8" } },
       { tag: "path", attrs: { d: "M2 14h2" } },
       { tag: "path", attrs: { d: "M20 14h2" } },
       { tag: "line", attrs: { x1: 15, x2: 15 }, key: "path" },

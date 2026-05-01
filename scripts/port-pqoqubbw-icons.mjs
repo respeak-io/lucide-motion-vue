@@ -1613,11 +1613,14 @@ function parseLeafAttrs(attrsSrc) {
   if (dotMatch) partKey = dotMatch[1]
   else if (brkMatch) partKey = brkMatch[1] || brkMatch[2]
 
-  // Bindings that aren't shape attrs: drop these.
-  const SKIP_BIND = new Set([
-    'variants', 'animate', 'width', 'height',
-    'stroke-width', 'strokeWidth',
-  ])
+  // Skip motion-v framework bindings only. Everything else is a real SVG
+  // attribute and must reach `<MultiVariantIcon>`'s child render — including
+  // geometry like `width`/`height` on `<rect>`, `cx`/`cy`/`r` on `<circle>`,
+  // and per-element overrides like `stroke-width="3"`. Earlier versions
+  // skipped width/height/stroke-width here, which silently zeroed the
+  // dimensions of every keyed `<rect>` (Bot's body rectangle was the visible
+  // regression).
+  const SKIP_BIND = new Set(['variants', 'animate'])
 
   // Numeric bound attrs: `:cx="6"`, `:r="2.5"`, `:y1="-3"`. Run before the
   // generic string pass so we don't capture them as strings.
@@ -1629,12 +1632,12 @@ function parseLeafAttrs(attrsSrc) {
     attrs[k] = Number(m[2])
   }
 
-  // Static string attrs: `d="M..."`, `points="0,0 1,1"`. Skip framework attrs.
-  const SKIP_STATIC = new Set([
-    'initial', 'xmlns', 'fill', 'stroke',
-    'stroke-linecap', 'stroke-linejoin',
-    'overflow', 'viewBox', 'width', 'height',
-  ])
+  // Static string attrs: `d="M..."`, `points="0,0 1,1"`. Only the few
+  // root-svg-only attrs and motion-v's `initial="initial"` get skipped.
+  // Everything else (per-element fill/stroke overrides, stroke-dasharray,
+  // transform, etc.) is preserved verbatim so the merged icon renders the
+  // same as the source.
+  const SKIP_STATIC = new Set(['initial', 'xmlns', 'viewBox', 'overflow'])
   const stringAttrRe = /(?:^|\s)([a-zA-Z][a-zA-Z0-9-]*)="([^"]*)"/g
   while ((m = stringAttrRe.exec(attrsSrc)) !== null) {
     const k = m[1]
