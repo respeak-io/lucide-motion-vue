@@ -3,14 +3,17 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 /**
  * Tiny hash router. No vue-router dep. Top-level routes:
  *
- *   #/                      → browse (icon grid, search, detail drawer)
+ *   #/                      → browse (icon grid, search)
+ *   #/icon/<kebab>          → browse with a specific icon's detail drawer open
  *   #/docs                  → docs (intro page)
  *   #/docs/<section>        → docs with a specific section scrolled into view
  *   #/playground            → playground (icon picker + prop controls)
  *   #/playground/<kebab>    → playground with a specific icon preselected
  *
  * The docs view watches `route.section` and jumps to the anchor when it
- * changes. The playground treats `section` as the icon's kebab-case slug.
+ * changes. Both playground and browse treat `section` as the icon's
+ * kebab-case slug — in browse it's the icon whose detail drawer is open, so
+ * the drawer lives in history and the browser Back button closes it.
  */
 
 export type Route = {
@@ -29,11 +32,14 @@ function parse(hash: string): Route {
   if (head === 'playground') {
     return { view: 'playground', section: rest[0] ?? null }
   }
+  if (head === 'icon') {
+    return { view: 'browse', section: rest[0] ?? null }
+  }
   return { view: 'browse', section: null }
 }
 
 function stringify(r: Route): string {
-  if (r.view === 'browse') return '#/'
+  if (r.view === 'browse') return r.section ? `#/icon/${r.section}` : '#/'
   if (r.view === 'playground') {
     return r.section ? `#/playground/${r.section}` : '#/playground'
   }

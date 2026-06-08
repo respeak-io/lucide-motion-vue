@@ -16,7 +16,6 @@ const { route, push } = useRouter()
 
 const search = ref('')
 const topBar = ref<InstanceType<typeof TopBar> | null>(null)
-const browseView = ref<InstanceType<typeof BrowseView> | null>(null)
 const playgroundView = ref<InstanceType<typeof PlaygroundView> | null>(null)
 const scrollSentinel = ref<HTMLElement | null>(null)
 
@@ -36,6 +35,37 @@ const filtered = computed<IconMeta[]>(() => {
   return iconsMeta.filter(
     m => m.kebab.includes(q) || m.pascal.toLowerCase().includes(q),
   )
+})
+
+// The open detail drawer is a route (`#/icon/<kebab>`), not local component
+// state — so the browser Back button (and the mobile back gesture) closes it
+// instead of leaving the site, and an icon's detail is deep-linkable.
+const selectedIcon = computed<IconMeta | null>(() => {
+  if (route.value.view !== 'browse' || !route.value.section) return null
+  return iconsMeta.find(m => m.kebab === route.value.section) ?? null
+})
+
+// Was the drawer opened by navigating within the app (vs. a cold deep-link or
+// a Forward back into it)? When it was, closing pops the history entry we
+// pushed, so Back and the close button behave identically with no leftover
+// forward entry that would re-open the drawer. Otherwise we replace the URL so
+// closing never steps off the site.
+const openedFromApp = ref(false)
+
+function openIcon(m: IconMeta) {
+  openedFromApp.value = true
+  push({ view: 'browse', section: m.kebab })
+}
+
+function closeIcon() {
+  if (openedFromApp.value) history.back()
+  else push({ view: 'browse', section: null })
+}
+
+// Reset the flag whenever the drawer actually closes, however that happened
+// (Back, close button, Esc, or navigating to another view).
+watch(selectedIcon, icon => {
+  if (!icon) openedFromApp.value = false
 })
 
 function navigate(r: Route) {
@@ -60,9 +90,9 @@ function onGlobalKey(e: KeyboardEvent) {
     return
   }
   // Esc closes the drawer if one's open
-  if (e.key === 'Escape' && browseView.value?.hasDrawer()) {
+  if (e.key === 'Escape' && selectedIcon.value) {
     e.preventDefault()
-    browseView.value.closeDrawer()
+    closeIcon()
     return
   }
   // / focuses the contextual search when not already typing somewhere
@@ -100,11 +130,11 @@ onBeforeUnmount(() => {
   scrollObs?.disconnect()
 })
 
-// Close the drawer when navigating away from browse; reset scroll on view swap.
+// Reset scroll on view swap. The drawer closes on its own when the route
+// leaves the icon path, since it's derived from the route now.
 watch(
   () => route.value.view,
-  v => {
-    if (v !== 'browse') browseView.value?.closeDrawer()
+  () => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
   },
 )
@@ -137,9 +167,11 @@ watch(
 
     <BrowseView
       v-show="route.view === 'browse'"
-      ref="browseView"
       :filtered="filtered"
       :search="search"
+      :selected="selectedIcon"
+      @open="openIcon"
+      @close="closeIcon"
     />
 
     <PlaygroundView

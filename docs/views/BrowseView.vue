@@ -1,20 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { type IconMeta } from '@respeak/lucide-motion-vue'
 import IconCard from '../components/IconCard.vue'
 import IconDrawer from '../components/IconDrawer.vue'
 
-defineProps<{ filtered: IconMeta[]; search: string }>()
-
-const selected = ref<IconMeta | null>(null)
-
-defineExpose({
-  closeDrawer() { selected.value = null },
-  hasDrawer() { return selected.value !== null },
-})
-
-function open(m: IconMeta) { selected.value = m }
-function close() { selected.value = null }
+// The open drawer is owned by the route (App.vue derives `selected` from
+// `#/icon/<kebab>`), so opening/closing goes back up as events. This is what
+// puts the drawer in browser history — Back closes it instead of leaving.
+defineProps<{ filtered: IconMeta[]; search: string; selected: IconMeta | null }>()
+defineEmits<{ (e: 'open', meta: IconMeta): void; (e: 'close'): void }>()
 </script>
 
 <template>
@@ -30,7 +23,7 @@ function close() { selected.value = null }
           v-for="m in filtered"
           :key="m.kebab"
           :meta="m"
-          @open="open"
+          @open="$emit('open', m)"
         />
       </div>
     </main>
@@ -45,7 +38,7 @@ function close() { selected.value = null }
       </span>
     </footer>
 
-    <IconDrawer v-if="selected" :meta="selected" @close="close" />
+    <IconDrawer v-if="selected" :meta="selected" @close="$emit('close')" />
   </div>
 </template>
 
