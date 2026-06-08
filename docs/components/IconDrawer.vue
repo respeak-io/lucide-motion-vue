@@ -9,6 +9,7 @@ import {
   type IconSource,
 } from '@respeak/lucide-motion-vue'
 import CodeBlock from './CodeBlock.vue'
+import CssExportSection from './CssExportSection.vue'
 import IconContextPreview from './IconContextPreview.vue'
 
 const props = defineProps<{ meta: IconMeta }>()
@@ -147,6 +148,10 @@ const activeSource = computed(() => SOURCES[selectedVariant.value.source])
         <CodeBlock :code="importLine()" lang="ts" />
       </div>
 
+      <div class="section">
+        <CssExportSection :kebab="meta.kebab" :variant="selectedVariant.name" />
+      </div>
+
       <!--
         Attribution for the currently-selected variant. Updates live when
         the user flips variants. The chip itself is the link when the
@@ -241,4 +246,5 @@ const activeSource = computed(() => SOURCES[selectedVariant.value.source])
   border-color: color-mix(in srgb, #f59e0b 40%, transparent);
   color: #f59e0b;
 }
+
 </style>

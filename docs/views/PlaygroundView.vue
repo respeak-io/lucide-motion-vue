@@ -7,6 +7,7 @@ import {
   type IconMeta,
 } from '@respeak/lucide-motion-vue'
 import CodeBlock from '../components/CodeBlock.vue'
+import CssExportSection from '../components/CssExportSection.vue'
 import IconContextPreview from '../components/IconContextPreview.vue'
 import PlaygroundPicker from '../components/PlaygroundPicker.vue'
 import PlaygroundControls, {
@@ -132,6 +133,7 @@ const importLine = computed(
   () => `import { ${selected.value.pascal} } from '@respeak/lucide-motion-vue'`,
 )
 
+
 // ---- Expose focus helper so the global ⌘K / '/' bindings can target it. ----
 const pickerRef = ref<InstanceType<typeof PlaygroundPicker> | null>(null)
 defineExpose({
@@ -197,6 +199,10 @@ defineExpose({
 
       <CodeBlock :code="snippet" lang="vue" />
       <CodeBlock :code="importLine" lang="ts" />
+
+      <div class="pg-code-export">
+        <CssExportSection :kebab="selected.kebab" :variant="variant.name" />
+      </div>
     </main>
 
     <aside class="pg-knobs" aria-label="Props">
@@ -221,3 +227,7 @@ defineExpose({
     </aside>
   </div>
 </template>
+
+<style scoped>
+.pg-code-export { margin-top: 4px; }
+</style>
