@@ -7,7 +7,13 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **23 hand-written semantic navigation animations:** `Bolt`, `Briefcase`,
+  `Building2`, `ClockAlert`, `Code`, `Contact`, `Database`, `Folder`, `Group`,
+  `Inbox`, `LayoutTemplate`, `LibraryBig`, `Megaphone`, `PenLine`, `Phone`,
+  `Repeat`, `Shield`, `ShieldPlus`, `SquareUser`, `Tag`, `Tags`, `ToyBrick`,
+  and `UserCog`. Each preserves the Lucide silhouette at rest and coordinates
+  at least two independently timed parts on interaction.
 
 ## [0.6.2] - 2026-05-01
 

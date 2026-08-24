@@ -7,13 +7,13 @@
 [![types](https://img.shields.io/npm/types/@respeak/lucide-motion-vue.svg)](https://www.npmjs.com/package/@respeak/lucide-motion-vue)
 [![live demo](https://img.shields.io/badge/demo-live-7c3aed.svg)](https://respeak-io.github.io/lucide-motion-vue/)
 
-**The largest animated icon library for Vue 3.** 523 Lucide icons across 815 named animation variants — drop-in and tree-shakeable, with a live gallery, variant switcher, and copy-paste snippets.
+**The largest animated icon library for Vue 3.** 546 Lucide icons across 838 named animation variants — drop-in and tree-shakeable, with a live gallery, variant switcher, and copy-paste snippets.
 
 [![Animated icon preview](./docs/hero.gif)](https://respeak-io.github.io/lucide-motion-vue/)
 
 **▶︎ [Live gallery + docs](https://respeak-io.github.io/lucide-motion-vue/)** — hover any icon to preview; click for variants, props, and copy-paste snippets. Built on [Motion for Vue](https://motion.dev/docs/vue), ships a Nuxt module, SSR-safe, fully tree-shakable per icon.
 
-- **523 icons / 815 named variants**, tree-shakable per chunk — one icon, one bundle entry
+- **546 icons / 838 named variants**, tree-shakable per chunk — one icon, one bundle entry
 - **Multiple animations per icon.** `<Heart animation="fill" />`, `<Sun animation="alt" />`, `<Link2 animation="apart" />`. Variants can carry materially different motion *and* different element graphs under one component name (e.g. `Sun`'s `default` is the animate-ui sunburst, `alt` is the lucide-animated minimal silhouette — same `<Sun>` import).
 - Ergonomic triggers: `animateOnHover`, `animateOnTap`, `animateOnView`
 - Composable `<AnimateIcon>` wrapper drives nested icons via provide/inject
