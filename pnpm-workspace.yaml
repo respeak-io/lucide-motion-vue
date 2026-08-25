@@ -1,2 +1,11 @@
 packages:
   - nuxt-playground
+
+# pnpm >=11 blocks dependency install scripts unless allow-listed. Both of
+# these are dev-time build tooling that genuinely needs its postinstall:
+# esbuild links the platform binary vite/vitest execute, and @parcel/watcher
+# fetches its prebuilt native watcher (nuxt/vite file watching). Neither ships
+# in the published package.
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
