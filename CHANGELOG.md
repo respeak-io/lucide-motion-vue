@@ -7,6 +7,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.7.0] - 2026-08-25
+
 ### Added
 - **23 hand-written semantic navigation animations:** `Bolt`, `Briefcase`,
   `Building2`, `ClockAlert`, `Code`, `Contact`, `Database`, `Folder`, `Group`,
