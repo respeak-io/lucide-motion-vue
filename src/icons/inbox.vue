@@ -18,52 +18,36 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "tray": {
-      "initial": {
-        "y": 0,
-        "pathLength": 1
+    tray: {
+      initial: {
+        y: 0,
+        pathLength: 1,
       },
-      "animate": {
-        "y": [
-          0,
-          -2.2,
-          0.5,
-          0
-        ],
-        "pathLength": [
-          0.25,
-          1
-        ],
-        "transition": {
-          "duration": 0.7,
-          "delay": 0.22,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        y: [0, -2.2, 0.5, 0],
+        pathLength: [0.25, 1],
+        transition: {
+          duration: 0.7,
+          delay: 0.22,
+          ease: 'easeOut',
+        },
+      },
     },
-    "body": {
-      "initial": {
-        "scaleY": 1,
-        "pathLength": 1
+    body: {
+      initial: {
+        scaleY: 1,
+        pathLength: 1,
       },
-      "animate": {
-        "scaleY": [
-          1,
-          0.93,
-          1.04,
-          1
-        ],
-        "pathLength": [
-          0.1,
-          1
-        ],
-        "transformOrigin": "12px 20px",
-        "transition": {
-          "duration": 0.9,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        scaleY: [1, 0.93, 1.04, 1],
+        pathLength: [0.1, 1],
+        transformOrigin: '12px 20px',
+        transition: {
+          duration: 0.9,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -111,6 +95,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     />
     <motion.path
       d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.body"
       initial="initial"
       :animate="current"

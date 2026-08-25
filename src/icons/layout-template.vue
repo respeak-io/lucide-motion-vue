@@ -18,74 +18,50 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "header": {
-      "initial": {
-        "y": -3,
-        "opacity": 0
+    header: {
+      initial: {
+        y: 0,
+        opacity: 1,
       },
-      "animate": {
-        "y": [
-          -3,
-          0.5,
-          0
-        ],
-        "opacity": [
-          0,
-          1,
-          1
-        ],
-        "transition": {
-          "duration": 0.55,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        y: [-3, 0.5, 0],
+        opacity: [0, 1, 1],
+        transition: {
+          duration: 0.55,
+          ease: 'easeOut',
+        },
+      },
     },
-    "main": {
-      "initial": {
-        "x": -3,
-        "opacity": 0
+    main: {
+      initial: {
+        x: 0,
+        opacity: 1,
       },
-      "animate": {
-        "x": [
-          -3,
-          0.5,
-          0
-        ],
-        "opacity": [
-          0,
-          1,
-          1
-        ],
-        "transition": {
-          "duration": 0.62,
-          "delay": 0.16,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        x: [-3, 0.5, 0],
+        opacity: [0, 1, 1],
+        transition: {
+          duration: 0.62,
+          delay: 0.16,
+          ease: 'easeOut',
+        },
+      },
     },
-    "aside": {
-      "initial": {
-        "x": 3,
-        "opacity": 0
+    aside: {
+      initial: {
+        x: 0,
+        opacity: 1,
       },
-      "animate": {
-        "x": [
-          3,
-          -0.5,
-          0
-        ],
-        "opacity": [
-          0,
-          1,
-          1
-        ],
-        "transition": {
-          "duration": 0.72,
-          "delay": 0.28,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        x: [3, -0.5, 0],
+        opacity: [0, 1, 1],
+        transition: {
+          duration: 0.72,
+          delay: 0.28,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 

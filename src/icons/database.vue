@@ -18,82 +18,57 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "top": {
-      "initial": {
-        "y": 0,
-        "scaleX": 1
+    top: {
+      initial: {
+        y: 0,
+        scaleX: 1,
       },
-      "animate": {
-        "y": [
-          0,
-          -2,
-          0
-        ],
-        "scaleX": [
-          1,
-          0.9,
-          1
-        ],
-        "transformOrigin": "12px 5px",
-        "transition": {
-          "duration": 0.62,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        y: [0, -2, 0],
+        scaleX: [1, 0.9, 1],
+        transformOrigin: '12px 5px',
+        transition: {
+          duration: 0.62,
+          ease: 'easeOut',
+        },
+      },
     },
-    "body": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    body: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.9,
-          "delay": 0.08,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0.08
-          }
-        }
-      }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.9,
+          delay: 0.08,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0.08,
+          },
+        },
+      },
     },
-    "layer": {
-      "initial": {
-        "y": 2,
-        "opacity": 0,
-        "pathLength": 0
+    layer: {
+      initial: {
+        y: 0,
+        opacity: 1,
+        pathLength: 1,
       },
-      "animate": {
-        "y": [
-          2,
-          -0.5,
-          0
-        ],
-        "opacity": [
-          0,
-          1,
-          1
-        ],
-        "pathLength": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.58,
-          "delay": 0.36,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        y: [2, -0.5, 0],
+        opacity: [0, 1, 1],
+        pathLength: [0, 1],
+        transition: {
+          duration: 0.58,
+          delay: 0.36,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -137,6 +112,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
       cy="5"
       rx="9"
       ry="3"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.top"
       initial="initial"
       :animate="current"

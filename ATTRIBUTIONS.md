@@ -37,12 +37,33 @@ the animated Lucide collection showcased at [lucide-animated.com](https://lucide
 
 ## hand-written
 
-Icons designed in-repo — currently just `rocket` (variants `default` and
-`launch`; the `lucide-animated` variant on the same icon is ported from
-pqoqubbw/icons, not hand-written). SVG geometry is still from Lucide;
-animation is original work.
+Icons whose animation was designed for this repo rather than ported from an
+upstream project. SVG geometry is still Lucide's; the motion is original work.
 
 - **License:** MIT for the animation code; ISC for the Lucide geometry.
+
+### Maintainers
+
+`heart-pulse`, `rocket` (variants `default` and `launch` — the
+`lucide-animated` variant on the same icon is ported from pqoqubbw/icons, not
+hand-written), `siren`, `umbrella`, `wand-sparkles`.
+
+### Community contributions
+
+Contributed animations are `hand-written` too; the contributor holds the
+copyright on the motion and licenses it to this project under MIT.
+
+- **[Tushar Shukla](https://github.com/tusharrXop)** —
+  [#10](https://github.com/respeak-io/lucide-motion-vue/pull/10):
+  `bolt`, `briefcase`, `building-2`, `clock-alert`, `code`, `contact`,
+  `database`, `folder`, `group`, `inbox`, `layout-template`, `library-big`,
+  `megaphone`, `pen-line`, `phone`, `repeat`, `shield`, `shield-plus`,
+  `square-user`, `tag`, `tags`, `toy-brick`, `user-cog`.
+
+  Note: `shield` and `phone` resolve to the same geometry as the existing
+  `shield-check` and `phone-call` at the end of their animation. Kept
+  deliberately — both rest on their own Lucide silhouette and ship under
+  their own name.
 
 Hand-written SFCs carry a `// Hand-written` (or `// Hand-ported`) header
 comment. Both port scripts check for this sentinel and refuse to clobber

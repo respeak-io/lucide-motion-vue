@@ -18,79 +18,57 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "shield": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    shield: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.86,
-          "delay": 0,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0
-          }
-        }
-      }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.86,
+          delay: 0,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0,
+          },
+        },
+      },
     },
-    "horizontal": {
-      "initial": {
-        "scaleX": 0,
-        "opacity": 0
+    horizontal: {
+      initial: {
+        scaleX: 1,
+        opacity: 1,
       },
-      "animate": {
-        "scaleX": [
-          0,
-          1.2,
-          1
-        ],
-        "opacity": [
-          0,
-          1,
-          1
-        ],
-        "transformOrigin": "12px 12px",
-        "transition": {
-          "duration": 0.42,
-          "delay": 0.36,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        scaleX: [0, 1.2, 1],
+        opacity: [0, 1, 1],
+        transformOrigin: '12px 12px',
+        transition: {
+          duration: 0.42,
+          delay: 0.36,
+          ease: 'easeOut',
+        },
+      },
     },
-    "vertical": {
-      "initial": {
-        "scaleY": 0,
-        "opacity": 0
+    vertical: {
+      initial: {
+        scaleY: 1,
+        opacity: 1,
       },
-      "animate": {
-        "scaleY": [
-          0,
-          1.2,
-          1
-        ],
-        "opacity": [
-          0,
-          1,
-          1
-        ],
-        "transformOrigin": "12px 12px",
-        "transition": {
-          "duration": 0.5,
-          "delay": 0.5,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        scaleY: [0, 1.2, 1],
+        opacity: [0, 1, 1],
+        transformOrigin: '12px 12px',
+        transition: {
+          duration: 0.5,
+          delay: 0.5,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -138,12 +116,14 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     />
     <motion.path
       d="M9 12h6"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.horizontal"
       initial="initial"
       :animate="current"
     />
     <motion.path
       d="M12 9v6"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.vertical"
       initial="initial"
       :animate="current"

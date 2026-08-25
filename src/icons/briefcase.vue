@@ -18,47 +18,34 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "handle": {
-      "initial": {
-        "y": 0,
-        "pathLength": 1
+    handle: {
+      initial: {
+        y: 0,
+        pathLength: 1,
       },
-      "animate": {
-        "y": [
-          0,
-          -2.2,
-          -1.4,
-          0
-        ],
-        "pathLength": [
-          0.35,
-          1
-        ],
-        "transition": {
-          "duration": 0.72,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        y: [0, -2.2, -1.4, 0],
+        pathLength: [0.35, 1],
+        transition: {
+          duration: 0.72,
+          ease: 'easeOut',
+        },
+      },
     },
-    "case": {
-      "initial": {
-        "scaleY": 1
+    case: {
+      initial: {
+        scaleY: 1,
       },
-      "animate": {
-        "scaleY": [
-          1,
-          0.92,
-          1.04,
-          1
-        ],
-        "transformOrigin": "12px 20px",
-        "transition": {
-          "duration": 0.84,
-          "delay": 0.08,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        scaleY: [1, 0.92, 1.04, 1],
+        transformOrigin: '12px 20px',
+        transition: {
+          duration: 0.84,
+          delay: 0.08,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -110,6 +97,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
       x="2"
       y="6"
       rx="2"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.case"
       initial="initial"
       :animate="current"

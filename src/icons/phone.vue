@@ -18,76 +18,51 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "handset": {
-      "initial": {
-        "rotate": 0,
-        "scale": 1
+    handset: {
+      initial: {
+        rotate: 0,
+        scale: 1,
       },
-      "animate": {
-        "rotate": [
-          0,
-          -7,
-          7,
-          -4,
-          3,
-          0
-        ],
-        "scale": [
-          1,
-          1.03,
-          1
-        ],
-        "transformOrigin": "12px 12px",
-        "transition": {
-          "duration": 0.86,
-          "ease": "easeInOut"
-        }
-      }
+      animate: {
+        rotate: [0, -7, 7, -4, 3, 0],
+        scale: [1, 1.03, 1],
+        transformOrigin: '12px 12px',
+        transition: {
+          duration: 0.86,
+          ease: 'easeInOut',
+        },
+      },
     },
-    "outerRing": {
-      "initial": {
-        "pathLength": 0,
-        "opacity": 0
+    outerRing: {
+      initial: {
+        pathLength: 0,
+        opacity: 0,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1,
-          0.9
-        ],
-        "transition": {
-          "duration": 0.58,
-          "delay": 0.18,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1, 0.9],
+        transition: {
+          duration: 0.58,
+          delay: 0.18,
+          ease: 'easeOut',
+        },
+      },
     },
-    "innerRing": {
-      "initial": {
-        "pathLength": 0,
-        "opacity": 0
+    innerRing: {
+      initial: {
+        pathLength: 0,
+        opacity: 0,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1,
-          0.9
-        ],
-        "transition": {
-          "duration": 0.46,
-          "delay": 0.38,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1, 0.9],
+        transition: {
+          duration: 0.46,
+          delay: 0.38,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -128,6 +103,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
   >
     <motion.path
       d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.handset"
       initial="initial"
       :animate="current"

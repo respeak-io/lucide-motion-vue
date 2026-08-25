@@ -18,51 +18,35 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "right": {
-      "initial": {
-        "x": 0,
-        "pathLength": 1
+    right: {
+      initial: {
+        x: 0,
+        pathLength: 1,
       },
-      "animate": {
-        "x": [
-          0,
-          3,
-          -0.6,
-          0
-        ],
-        "pathLength": [
-          0.2,
-          1
-        ],
-        "transition": {
-          "duration": 0.7,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        x: [0, 3, -0.6, 0],
+        pathLength: [0.2, 1],
+        transition: {
+          duration: 0.7,
+          ease: 'easeOut',
+        },
+      },
     },
-    "left": {
-      "initial": {
-        "x": 0,
-        "pathLength": 1
+    left: {
+      initial: {
+        x: 0,
+        pathLength: 1,
       },
-      "animate": {
-        "x": [
-          0,
-          -3,
-          0.6,
-          0
-        ],
-        "pathLength": [
-          0.2,
-          1
-        ],
-        "transition": {
-          "duration": 0.82,
-          "delay": 0.06,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        x: [0, -3, 0.6, 0],
+        pathLength: [0.2, 1],
+        transition: {
+          duration: 0.82,
+          delay: 0.06,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 

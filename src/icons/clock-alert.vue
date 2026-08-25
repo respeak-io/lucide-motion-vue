@@ -18,97 +18,70 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "hands": {
-      "initial": {
-        "rotate": 0
+    hands: {
+      initial: {
+        rotate: 0,
       },
-      "animate": {
-        "rotate": [
-          0,
-          18,
-          -4,
-          0
-        ],
-        "transformOrigin": "12px 12px",
-        "transition": {
-          "duration": 0.82,
-          "ease": "easeInOut"
-        }
-      }
+      animate: {
+        rotate: [0, 18, -4, 0],
+        transformOrigin: '12px 12px',
+        transition: {
+          duration: 0.82,
+          ease: 'easeInOut',
+        },
+      },
     },
-    "alert": {
-      "initial": {
-        "scaleY": 0.35,
-        "opacity": 0.4
+    alert: {
+      initial: {
+        scaleY: 1,
+        opacity: 1,
       },
-      "animate": {
-        "scaleY": [
-          0.35,
-          1.18,
-          1
-        ],
-        "opacity": [
-          0.4,
-          1,
-          1
-        ],
-        "transformOrigin": "20px 17px",
-        "transition": {
-          "duration": 0.5,
-          "delay": 0.32,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        scaleY: [0.35, 1.18, 1],
+        opacity: [0.4, 1, 1],
+        transformOrigin: '20px 17px',
+        transition: {
+          duration: 0.5,
+          delay: 0.32,
+          ease: 'easeOut',
+        },
+      },
     },
-    "dot": {
-      "initial": {
-        "scale": 0,
-        "opacity": 0
+    dot: {
+      initial: {
+        scale: 1,
+        opacity: 1,
       },
-      "animate": {
-        "scale": [
-          0,
-          1.45,
-          1
-        ],
-        "opacity": [
-          0,
-          1,
-          1
-        ],
-        "transformOrigin": "20px 21px",
-        "transition": {
-          "duration": 0.38,
-          "delay": 0.58,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        scale: [0, 1.45, 1],
+        opacity: [0, 1, 1],
+        transformOrigin: '20px 21px',
+        transition: {
+          duration: 0.38,
+          delay: 0.58,
+          ease: 'easeOut',
+        },
+      },
     },
-    "clock": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    clock: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.88,
-          "delay": 0,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0
-          }
-        }
-      }
-    }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.88,
+          delay: 0,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0,
+          },
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -149,6 +122,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
   >
     <motion.path
       d="M12 6v6l4 2"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.hands"
       initial="initial"
       :animate="current"
@@ -156,12 +130,14 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     />
     <motion.path
       d="M20 12v5"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.alert"
       initial="initial"
       :animate="current"
     />
     <motion.path
       d="M20 21h.01"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.dot"
       initial="initial"
       :animate="current"

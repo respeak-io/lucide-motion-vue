@@ -18,92 +18,70 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "topHead": {
-      "initial": {
-        "x": 0
+    topHead: {
+      initial: {
+        x: 0,
       },
-      "animate": {
-        "x": [
-          0,
-          2,
-          -0.4,
-          0
-        ],
-        "transition": {
-          "duration": 0.5,
-          "delay": 0.32,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        x: [0, 2, -0.4, 0],
+        transition: {
+          duration: 0.5,
+          delay: 0.32,
+          ease: 'easeOut',
+        },
+      },
     },
-    "topPath": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    topPath: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.62,
-          "delay": 0,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0
-          }
-        }
-      }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.62,
+          delay: 0,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0,
+          },
+        },
+      },
     },
-    "bottomHead": {
-      "initial": {
-        "x": 0
+    bottomHead: {
+      initial: {
+        x: 0,
       },
-      "animate": {
-        "x": [
-          0,
-          -2,
-          0.4,
-          0
-        ],
-        "transition": {
-          "duration": 0.56,
-          "delay": 0.64,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        x: [0, -2, 0.4, 0],
+        transition: {
+          duration: 0.56,
+          delay: 0.64,
+          ease: 'easeOut',
+        },
+      },
     },
-    "bottomPath": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    bottomPath: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.68,
-          "delay": 0.38,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0.38
-          }
-        }
-      }
-    }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.68,
+          delay: 0.38,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0.38,
+          },
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 

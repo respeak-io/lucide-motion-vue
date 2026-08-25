@@ -18,52 +18,36 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "shell": {
-      "initial": {
-        "rotate": 0,
-        "pathLength": 1
+    shell: {
+      initial: {
+        rotate: 0,
+        pathLength: 1,
       },
-      "animate": {
-        "rotate": [
-          0,
-          -4,
-          3,
-          0
-        ],
-        "pathLength": [
-          0.2,
-          1
-        ],
-        "transformOrigin": "12px 12px",
-        "transition": {
-          "duration": 0.82,
-          "ease": "easeInOut"
-        }
-      }
+      animate: {
+        rotate: [0, -4, 3, 0],
+        pathLength: [0.2, 1],
+        transformOrigin: '12px 12px',
+        transition: {
+          duration: 0.82,
+          ease: 'easeInOut',
+        },
+      },
     },
-    "core": {
-      "initial": {
-        "rotate": 0,
-        "scale": 1
+    core: {
+      initial: {
+        rotate: 0,
+        scale: 1,
       },
-      "animate": {
-        "rotate": [
-          0,
-          100,
-          180
-        ],
-        "scale": [
-          1,
-          0.82,
-          1
-        ],
-        "transformOrigin": "12px 12px",
-        "transition": {
-          "duration": 0.95,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        rotate: [0, 100, 180],
+        scale: [1, 0.82, 1],
+        transformOrigin: '12px 12px',
+        transition: {
+          duration: 0.95,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -104,6 +88,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
   >
     <motion.path
       d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.shell"
       initial="initial"
       :animate="current"
@@ -113,6 +98,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
       cx="12"
       cy="12"
       r="4"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.core"
       initial="initial"
       :animate="current"

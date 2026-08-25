@@ -18,104 +18,78 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "windows": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    windows: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.45,
-          "delay": 0.3,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0.3
-          }
-        }
-      }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.45,
+          delay: 0.3,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0.3,
+          },
+        },
+      },
     },
-    "door": {
-      "initial": {
-        "y": 3,
-        "opacity": 0
+    door: {
+      initial: {
+        y: 0,
+        opacity: 1,
       },
-      "animate": {
-        "y": [
-          3,
-          -0.5,
-          0
-        ],
-        "opacity": [
-          0,
-          1,
-          1
-        ],
-        "transition": {
-          "duration": 0.58,
-          "delay": 0.38,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        y: [3, -0.5, 0],
+        opacity: [0, 1, 1],
+        transition: {
+          duration: 0.58,
+          delay: 0.38,
+          ease: 'easeOut',
+        },
+      },
     },
-    "wings": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    wings: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.76,
-          "delay": 0.12,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0.12
-          }
-        }
-      }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.76,
+          delay: 0.12,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0.12,
+          },
+        },
+      },
     },
-    "tower": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    tower: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.9,
-          "delay": 0,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0
-          }
-        }
-      }
-    }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.9,
+          delay: 0,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0,
+          },
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 

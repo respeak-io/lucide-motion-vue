@@ -18,57 +18,38 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "folder": {
-      "initial": {
-        "scaleY": 1,
-        "pathLength": 1
+    folder: {
+      initial: {
+        scaleY: 1,
+        pathLength: 1,
       },
-      "animate": {
-        "scaleY": [
-          1,
-          0.94,
-          1.03,
-          1
-        ],
-        "pathLength": [
-          0.2,
-          1
-        ],
-        "transformOrigin": "12px 20px",
-        "transition": {
-          "duration": 0.82,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        scaleY: [1, 0.94, 1.03, 1],
+        pathLength: [0.2, 1],
+        transformOrigin: '12px 20px',
+        transition: {
+          duration: 0.82,
+          ease: 'easeOut',
+        },
+      },
     },
-    "document": {
-      "initial": {
-        "y": -5,
-        "opacity": 0,
-        "pathLength": 0
+    document: {
+      initial: {
+        y: -5,
+        opacity: 0,
+        pathLength: 0,
       },
-      "animate": {
-        "y": [
-          -5,
-          1,
-          0
-        ],
-        "opacity": [
-          0,
-          1,
-          0.9
-        ],
-        "pathLength": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.68,
-          "delay": 0.18,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        y: [-5, 1, 0],
+        opacity: [0, 1, 0.9],
+        pathLength: [0, 1],
+        transition: {
+          duration: 0.68,
+          delay: 0.18,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -109,6 +90,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
   >
     <motion.path
       d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.folder"
       initial="initial"
       :animate="current"

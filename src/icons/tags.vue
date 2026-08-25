@@ -18,83 +18,54 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "front": {
-      "initial": {
-        "x": 0,
-        "y": 0,
-        "rotate": 0
+    front: {
+      initial: {
+        x: 0,
+        y: 0,
+        rotate: 0,
       },
-      "animate": {
-        "x": [
-          0,
-          1.5,
-          0
-        ],
-        "y": [
-          0,
-          -1.5,
-          0
-        ],
-        "rotate": [
-          0,
-          4,
-          0
-        ],
-        "transformOrigin": "10.5px 6.5px",
-        "transition": {
-          "duration": 0.82,
-          "ease": "easeInOut"
-        }
-      }
+      animate: {
+        x: [0, 1.5, 0],
+        y: [0, -1.5, 0],
+        rotate: [0, 4, 0],
+        transformOrigin: '10.5px 6.5px',
+        transition: {
+          duration: 0.82,
+          ease: 'easeInOut',
+        },
+      },
     },
-    "back": {
-      "initial": {
-        "x": 0,
-        "y": 0,
-        "opacity": 1
+    back: {
+      initial: {
+        x: 0,
+        y: 0,
+        opacity: 1,
       },
-      "animate": {
-        "x": [
-          0,
-          -2,
-          0
-        ],
-        "y": [
-          0,
-          1.5,
-          0
-        ],
-        "opacity": [
-          1,
-          0.65,
-          1
-        ],
-        "transition": {
-          "duration": 0.94,
-          "delay": 0.08,
-          "ease": "easeInOut"
-        }
-      }
+      animate: {
+        x: [0, -2, 0],
+        y: [0, 1.5, 0],
+        opacity: [1, 0.65, 1],
+        transition: {
+          duration: 0.94,
+          delay: 0.08,
+          ease: 'easeInOut',
+        },
+      },
     },
-    "hole": {
-      "initial": {
-        "scale": 1
+    hole: {
+      initial: {
+        scale: 1,
       },
-      "animate": {
-        "scale": [
-          1,
-          1.8,
-          0.8,
-          1
-        ],
-        "transformOrigin": "10.5px 6.5px",
-        "transition": {
-          "duration": 0.54,
-          "delay": 0.22,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        scale: [1, 1.8, 0.8, 1],
+        transformOrigin: '10.5px 6.5px',
+        transition: {
+          duration: 0.54,
+          delay: 0.22,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -135,6 +106,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
   >
     <motion.path
       d="M13.172 2a2 2 0 0 1 1.414.586l6.71 6.71a2.4 2.4 0 0 1 0 3.408l-4.592 4.592a2.4 2.4 0 0 1-3.408 0l-6.71-6.71A2 2 0 0 1 6 9.172V3a1 1 0 0 1 1-1z"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.front"
       initial="initial"
       :animate="current"
@@ -151,6 +123,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
       cy="6.5"
       r="0.5"
       fill="currentColor"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.hole"
       initial="initial"
       :animate="current"

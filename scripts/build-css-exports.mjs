@@ -136,7 +136,12 @@ function parseGeometry(src) {
       if (a === 'points' && !/^[\d.\s,-]+$/.test(val.trim())) continue
       geom[a] = val
     }
-    elements.push({ tag, key, geom })
+    // An element may pin its transform reference box (`:style="{ transformBox:
+    // 'view-box' }"`), which is what makes a px `transformOrigin` resolve
+    // against the 24x24 viewBox instead of the element's own bbox. Mirror it
+    // here, or the export pivots somewhere the component doesn't.
+    const box = attrs.match(/transformBox:\s*'(view-box|fill-box)'/)?.[1] ?? null
+    elements.push({ tag, key, geom, box })
   }
   return { elements, groupKey }
 }
@@ -303,7 +308,10 @@ function buildSnippet({ kebab, variant, elements, groupKey, animations }) {
     cssBlocks.push(tr.keyframes)
     const cls = `${prefix}-${key}`
     const base = []
-    if (tr.needsBox) base.push('transform-box: fill-box', `transform-origin: ${tr.origin || 'center'}`)
+    if (tr.needsBox) {
+      const box = elements.find(e => e.key === key && e.box)?.box ?? 'fill-box'
+      base.push(`transform-box: ${box}`, `transform-origin: ${tr.origin || 'center'}`)
+    }
     if (tr.rest.length) base.push(...tr.rest)
     if (base.length) cssBlocks.push(`.${cls} { ${base.join('; ')}; }`)
     const sel = tr.loop ? `.${cls}` : `.${prefix}:hover .${cls}`

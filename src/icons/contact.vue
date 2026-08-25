@@ -18,96 +18,72 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "rings": {
-      "initial": {
-        "y": 0
+    rings: {
+      initial: {
+        y: 0,
       },
-      "animate": {
-        "y": [
-          0,
-          -2,
-          0
-        ],
-        "transition": {
-          "duration": 0.55,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        y: [0, -2, 0],
+        transition: {
+          duration: 0.55,
+          ease: 'easeOut',
+        },
+      },
     },
-    "shoulders": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    shoulders: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.54,
-          "delay": 0.3,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0.3
-          }
-        }
-      }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.54,
+          delay: 0.3,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0.3,
+          },
+        },
+      },
     },
-    "head": {
-      "initial": {
-        "scale": 0.7,
-        "opacity": 0.5
+    head: {
+      initial: {
+        scale: 1,
+        opacity: 1,
       },
-      "animate": {
-        "scale": [
-          0.7,
-          1.15,
-          1
-        ],
-        "opacity": [
-          0.5,
-          1,
-          1
-        ],
-        "transformOrigin": "12px 10px",
-        "transition": {
-          "duration": 0.52,
-          "delay": 0.18,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        scale: [0.7, 1.15, 1],
+        opacity: [0.5, 1, 1],
+        transformOrigin: '12px 10px',
+        transition: {
+          duration: 0.52,
+          delay: 0.18,
+          ease: 'easeOut',
+        },
+      },
     },
-    "card": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    card: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.9,
-          "delay": 0,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0
-          }
-        }
-      }
-    }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.9,
+          delay: 0,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0,
+          },
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -169,6 +145,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
       cx="12"
       cy="10"
       r="3"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.head"
       initial="initial"
       :animate="current"

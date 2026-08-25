@@ -18,60 +18,45 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "body": {
-      "initial": {
-        "scaleY": 1
+    body: {
+      initial: {
+        scaleY: 1,
       },
-      "animate": {
-        "scaleY": [
-          1,
-          0.88,
-          1.07,
-          1
-        ],
-        "transformOrigin": "12px 20px",
-        "transition": {
-          "duration": 0.74,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        scaleY: [1, 0.88, 1.07, 1],
+        transformOrigin: '12px 20px',
+        transition: {
+          duration: 0.74,
+          ease: 'easeOut',
+        },
+      },
     },
-    "leftStud": {
-      "initial": {
-        "y": 0
+    leftStud: {
+      initial: {
+        y: 0,
       },
-      "animate": {
-        "y": [
-          0,
-          -3,
-          0.7,
-          0
-        ],
-        "transition": {
-          "duration": 0.62,
-          "delay": 0.1,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        y: [0, -3, 0.7, 0],
+        transition: {
+          duration: 0.62,
+          delay: 0.1,
+          ease: 'easeOut',
+        },
+      },
     },
-    "rightStud": {
-      "initial": {
-        "y": 0
+    rightStud: {
+      initial: {
+        y: 0,
       },
-      "animate": {
-        "y": [
-          0,
-          -3,
-          0.7,
-          0
-        ],
-        "transition": {
-          "duration": 0.72,
-          "delay": 0.24,
-          "ease": "easeOut"
-        }
-      }
-    }
+      animate: {
+        y: [0, -3, 0.7, 0],
+        transition: {
+          duration: 0.72,
+          delay: 0.24,
+          ease: 'easeOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -116,6 +101,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
       x="3"
       y="8"
       rx="1"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.body"
       initial="initial"
       :animate="current"

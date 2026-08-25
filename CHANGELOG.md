@@ -13,7 +13,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
   `Inbox`, `LayoutTemplate`, `LibraryBig`, `Megaphone`, `PenLine`, `Phone`,
   `Repeat`, `Shield`, `ShieldPlus`, `SquareUser`, `Tag`, `Tags`, `ToyBrick`,
   and `UserCog`. Each preserves the Lucide silhouette at rest and coordinates
-  at least two independently timed parts on interaction.
+  at least two independently timed parts on interaction. Contributed by
+  [@tusharrXop](https://github.com/tusharrXop) in
+  [#10](https://github.com/respeak-io/lucide-motion-vue/pull/10) — see
+  [`ATTRIBUTIONS.md`](./ATTRIBUTIONS.md).
+
+### Fixed
+- **No-JS CSS export honours an element's declared `transformBox`.** The
+  exporter hard-coded `transform-box: fill-box`, so a px `transformOrigin`
+  pivoted about the element's own bounding box instead of the 24x24 viewBox.
+  It now mirrors `:style="{ transformBox: … }"` from the component.
 
 ## [0.6.2] - 2026-05-01
 

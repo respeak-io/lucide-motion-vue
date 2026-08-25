@@ -18,79 +18,56 @@ const props = withDefaults(
 
 const animations = {
   default: {
-    "book": {
-      "initial": {
-        "y": 0,
-        "scaleY": 1
+    book: {
+      initial: {
+        y: 0,
+        scaleY: 1,
       },
-      "animate": {
-        "y": [
-          0,
-          -2,
-          0
-        ],
-        "scaleY": [
-          1,
-          1.08,
-          1
-        ],
-        "transformOrigin": "7px 21px",
-        "transition": {
-          "duration": 0.68,
-          "ease": "easeOut"
-        }
-      }
+      animate: {
+        y: [0, -2, 0],
+        scaleY: [1, 1.08, 1],
+        transformOrigin: '7px 21px',
+        transition: {
+          duration: 0.68,
+          ease: 'easeOut',
+        },
+      },
     },
-    "spine": {
-      "initial": {
-        "pathLength": 1,
-        "opacity": 1
+    spine: {
+      initial: {
+        pathLength: 1,
+        opacity: 1,
       },
-      "animate": {
-        "pathLength": [
-          0,
-          1
-        ],
-        "opacity": [
-          0,
-          1
-        ],
-        "transition": {
-          "duration": 0.48,
-          "delay": 0.24,
-          "ease": "easeInOut",
-          "opacity": {
-            "duration": 0.08,
-            "delay": 0.24
-          }
-        }
-      }
+      animate: {
+        pathLength: [0, 1],
+        opacity: [0, 1],
+        transition: {
+          duration: 0.48,
+          delay: 0.24,
+          ease: 'easeInOut',
+          opacity: {
+            duration: 0.08,
+            delay: 0.24,
+          },
+        },
+      },
     },
-    "leaning": {
-      "initial": {
-        "rotate": 0,
-        "y": 0
+    leaning: {
+      initial: {
+        rotate: 0,
+        y: 0,
       },
-      "animate": {
-        "rotate": [
-          0,
-          -7,
-          2,
-          0
-        ],
-        "y": [
-          0,
-          -1.5,
-          0
-        ],
-        "transformOrigin": "15.5px 21px",
-        "transition": {
-          "duration": 0.88,
-          "delay": 0.12,
-          "ease": "easeInOut"
-        }
-      }
-    }
+      animate: {
+        rotate: [0, -7, 2, 0],
+        y: [0, -1.5, 0],
+        transformOrigin: '15.5px 21px',
+        transition: {
+          duration: 0.88,
+          delay: 0.12,
+          ease: 'easeInOut',
+        },
+      },
+    },
   } satisfies Record<string, Variants>,
 } satisfies Record<string, Record<string, Variants>>
 
@@ -135,6 +112,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
       x="3"
       y="3"
       rx="1"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.book"
       initial="initial"
       :animate="current"
@@ -148,6 +126,7 @@ const selfWrap = computed(() => hasOwnTriggers(props))
     />
     <motion.path
       d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"
+      :style="{ transformBox: 'view-box' }"
       :variants="variants.leaning"
       initial="initial"
       :animate="current"
